@@ -7,7 +7,7 @@
     <title th:text="${filterParent != null ? filterParent.label() + ' — Notes' : 'All Notes'}">Notes</title>
 </head>
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content" style="backgound-color: white">
 
     <div class="page-header">
         <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;" th:if="${filterParent != null}">

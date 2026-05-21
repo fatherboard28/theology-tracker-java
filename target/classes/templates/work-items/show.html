@@ -177,14 +177,6 @@
         </div>
     </div>
 
-    <!-- General Notes -->
-    <div class="card" style="margin-bottom: 1.5rem;" th:if="${item.generalNotes != null}">
-        <div class="card-body">
-            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;">Notes</h2>
-            <div class="text-small" th:text="${item.generalNotes}"></div>
-        </div>
-    </div>
-
     <!-- Scripture Tags -->
     <div class="card" style="margin-bottom: 1.5rem;" th:if="${!scriptureTags.isEmpty()}">
         <div class="card-body">

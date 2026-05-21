@@ -983,7 +983,7 @@ select.form-control {
     color: var(--gray-700);
 }
 
-/* ── Note page — combined view/edit ──────────────────────────────────────── */
+/* ── Note page header ────────────────────────────────────────────────────── */
 .note-page-header {
     margin-bottom: var(--space-6);
     padding-bottom: var(--space-5);
@@ -1021,33 +1021,94 @@ select.form-control {
     color: var(--gray-500);
 }
 
+/* ── Note block editor ───────────────────────────────────────────────────── */
 .note-body-section {
-    margin-bottom: var(--space-6);
+    margin: var(--space-6) 0;
 }
 
-/* View mode: rendered markdown, clickable */
-.note-view-body {
-    min-height: 280px;
-    cursor: text;
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    padding: var(--space-4) var(--space-5);
-    transition: border-color var(--duration) var(--ease), background var(--duration) var(--ease);
+.note-editor-container {
+    padding: var(--space-1) 0;
 }
-.note-view-body:hover {
-    border-color: var(--gray-200);
+
+/* Each block: a contenteditable paragraph */
+.nb {
+    display: block;
+    width: 100%;
+    padding: 0.2rem var(--space-2);
+    border-radius: var(--radius-sm);
+    border: none;
+    outline: none;
+    min-height: 1.7em;
+    word-break: break-word;
+    line-height: 1.7;
+    color: var(--gray-800);
+    cursor: text;
+    transition: background var(--duration) var(--ease);
+    /* rendered HTML needs normal whitespace */
+    white-space: normal;
+}
+
+.nb:hover {
     background: var(--gray-50);
 }
 
-/* Edit mode: full-width textarea */
-.note-body-textarea {
-    width: 100%;
-    min-height: 420px;
+/* Active / editing block */
+.nb.nb-editing {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
-    line-height: 1.65;
-    resize: vertical;
+    background: var(--gray-50);
+    white-space: pre-wrap;
+    border-left: 2px solid var(--brand);
+    padding-left: calc(var(--space-2) - 2px);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
+
+/* Placeholder when an editing block is empty */
+.nb.nb-editing:empty::before {
+    content: 'Type here, or press Enter for a new block…';
+    color: var(--gray-300);
+    font-style: italic;
+    font-family: var(--font-sans);
+    pointer-events: none;
+}
+
+/* Rendered markdown typography inside blurred blocks */
+.nb:not(.nb-editing) h1 { font-size: var(--text-2xl); font-weight: 700; margin: 0.25rem 0; }
+.nb:not(.nb-editing) h2 { font-size: var(--text-xl);  font-weight: 600; margin: 0.25rem 0; }
+.nb:not(.nb-editing) h3 { font-size: var(--text-lg);  font-weight: 600; margin: 0.2rem 0; }
+.nb:not(.nb-editing) p  { margin: 0; }
+.nb:not(.nb-editing) ul,
+.nb:not(.nb-editing) ol { margin: 0; padding-left: 1.5rem; }
+.nb:not(.nb-editing) li { margin: 0.1rem 0; }
+.nb:not(.nb-editing) code {
+    background: var(--gray-100);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+}
+.nb:not(.nb-editing) pre {
+    background: var(--gray-900);
+    color: var(--gray-100);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    margin: 0;
+}
+.nb:not(.nb-editing) pre code {
+    background: none;
+    padding: 0;
+    font-size: var(--text-sm);
+}
+.nb:not(.nb-editing) blockquote {
+    border-left: 3px solid var(--brand);
+    margin: 0;
+    padding: 0.2rem 0 0.2rem var(--space-4);
+    color: var(--gray-600);
+}
+.nb:not(.nb-editing) strong { font-weight: 600; }
+.nb:not(.nb-editing) em     { font-style: italic; }
+.nb:not(.nb-editing) a      { color: var(--brand); text-decoration: underline; }
 
 /* ── Note Cards (listing) ─────────────────────────────────────────────────── */
 .note-list { display: flex; flex-direction: column; gap: var(--space-2); }

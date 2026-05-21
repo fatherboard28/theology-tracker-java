@@ -190,14 +190,6 @@
                     </div>
                 </div>
 
-                <!-- General Notes -->
-                <div class="form-group" style="margin-top: 1.25rem;">
-                    <label class="form-label" for="generalNotes">General Notes</label>
-                    <textarea id="generalNotes" name="generalNotes" class="form-control" rows="3"
-                              placeholder="Brief annotations or reminders..."
-                              th:text="${item != null ? item.generalNotes : ''}"></textarea>
-                </div>
-
                 <!-- Topic Tags -->
                 <div th:replace="~{topics/tag-select-fragment :: topicMultiSelect(${allTopics}, ${item != null ? item.topicTags.![id] : null})}"></div>
 
