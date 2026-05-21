@@ -4,6 +4,7 @@ import com.theology.tracker.dto.CourseFormDto;
 import com.theology.tracker.model.Course;
 import com.theology.tracker.model.CourseStatus;
 import com.theology.tracker.service.CourseService;
+import com.theology.tracker.service.TopicService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,9 +21,11 @@ import java.util.Map;
 public class CourseController {
 
     private final CourseService courseService;
+    private final TopicService topicService;
 
-    public CourseController(CourseService courseService) {
+    public CourseController(CourseService courseService, TopicService topicService) {
         this.courseService = courseService;
+        this.topicService = topicService;
     }
 
     @GetMapping
@@ -39,6 +42,7 @@ public class CourseController {
     public String newForm(Model model) {
         model.addAttribute("course", new Course());
         model.addAttribute("statuses", CourseStatus.values());
+        model.addAttribute("allTopics", topicService.findAllOrdered());
         model.addAttribute("formAction", "/courses");
         model.addAttribute("pageTitle", "New Course");
         return "courses/form";
@@ -51,9 +55,10 @@ public class CourseController {
         @RequestParam(defaultValue = "ACTIVE") String status,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetCompletion,
+        @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        CourseFormDto form = new CourseFormDto(title, description, status, startDate, targetCompletion);
+        CourseFormDto form = new CourseFormDto(title, description, status, startDate, targetCompletion, topicIds);
         Course course = courseService.create(form);
         ra.addFlashAttribute("successMessage", "Course \"" + course.getTitle() + "\" created.");
         return "redirect:/courses/" + course.getId();
@@ -74,6 +79,7 @@ public class CourseController {
         Course course = courseService.findById(id);
         model.addAttribute("course", course);
         model.addAttribute("statuses", CourseStatus.values());
+        model.addAttribute("allTopics", topicService.findAllOrdered());
         model.addAttribute("formAction", "/courses/" + id);
         model.addAttribute("pageTitle", "Edit Course");
         return "courses/form";
@@ -87,9 +93,10 @@ public class CourseController {
         @RequestParam(defaultValue = "ACTIVE") String status,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetCompletion,
+        @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        CourseFormDto form = new CourseFormDto(title, description, status, startDate, targetCompletion);
+        CourseFormDto form = new CourseFormDto(title, description, status, startDate, targetCompletion, topicIds);
         courseService.update(id, form);
         ra.addFlashAttribute("successMessage", "Course updated.");
         return "redirect:/courses/" + id;

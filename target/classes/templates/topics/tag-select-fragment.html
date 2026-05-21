@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Reusable topic multi-select fragment.
+  Parameters:
+    allTopics       — ordered list of all Topic entities (root first, then subtopics)
+    currentTopicIds — Collection<Long> of already-selected topic IDs (may be null/empty)
+-->
+<div th:fragment="topicMultiSelect(allTopics, currentTopicIds)" class="form-group">
+    <label class="form-label">Topic Tags</label>
+    <div th:if="${#lists.isEmpty(allTopics)}" class="form-hint">
+        No topics exist yet. <a th:href="@{/topics/new}">Create a topic</a> first.
+    </div>
+    <select th:if="${!#lists.isEmpty(allTopics)}"
+            name="topicIds" multiple class="form-control"
+            style="min-height: 130px;">
+        <option th:each="t : ${allTopics}"
+                th:value="${t.id}"
+                th:text="${(t.parentTopic != null ? '↳ ' : '') + t.title}"
+                th:selected="${currentTopicIds != null and currentTopicIds.contains(t.id)}">
+        </option>
+    </select>
+    <div class="form-hint" th:if="${!#lists.isEmpty(allTopics)}">
+        Hold Ctrl (Windows) or &#8984; (Mac) to select multiple topics.
+    </div>
+</div>
+
+</body>
+</html>

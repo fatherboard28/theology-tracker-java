@@ -79,6 +79,23 @@
         </div>
     </div>
 
+    <!-- Topic Tags section -->
+    <div class="section-header" style="margin-top: 1.5rem;">
+        <h2>Topic Tags</h2>
+        <a th:href="@{/courses/{id}/edit(id=${course.id})}" class="btn btn-secondary btn-sm">Manage Tags</a>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+        <div th:if="${!#sets.isEmpty(course.topics)}" class="topic-tags-row">
+            <span th:each="topic : ${course.topics}" class="topic-tag">
+                <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
+            </span>
+        </div>
+        <div th:if="${#sets.isEmpty(course.topics)}" class="text-muted text-small" style="font-style: italic;">
+            No topic tags. <a th:href="@{/courses/{id}/edit(id=${course.id})}">Edit this course</a> to add tags.
+        </div>
+    </div>
+
     <!-- Units section -->
     <div class="section-header">
         <h2>Units</h2>
@@ -110,6 +127,13 @@
                             </div>
                             <p class="text-small text-muted" style="margin: 0.25rem 0 0 1.5rem;"
                                th:if="${unit.description}" th:text="${unit.description}"></p>
+                            <div th:if="${!#sets.isEmpty(unit.topics)}"
+                                 class="topic-tags-row" style="margin: 0.35rem 0 0 1.5rem;">
+                                <span th:each="topic : ${unit.topics}" class="topic-tag topic-tag-sm">
+                                    <a th:href="@{/topics/{id}(id=${topic.id})}"
+                                       th:text="${topic.title}">Topic</a>
+                                </span>
+                            </div>
                             <div class="text-small text-muted" style="margin: 0.25rem 0 0 1.5rem;"
                                  th:if="${unit.targetCompletion != null or unit.actualCompletion != null}">
                                 <span th:if="${unit.targetCompletion != null}">

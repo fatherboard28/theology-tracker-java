@@ -4,13 +4,16 @@ import com.theology.tracker.dto.CourseFormDto;
 import com.theology.tracker.exception.ResourceNotFoundException;
 import com.theology.tracker.model.Course;
 import com.theology.tracker.model.CourseStatus;
+import com.theology.tracker.model.Topic;
 import com.theology.tracker.model.WorkItemStatus;
 import com.theology.tracker.repository.CourseRepository;
+import com.theology.tracker.repository.TopicRepository;
 import com.theology.tracker.repository.WorkItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -19,10 +22,12 @@ public class CourseService {
 
     private final CourseRepository courseRepo;
     private final WorkItemRepository workItemRepo;
+    private final TopicRepository topicRepo;
 
-    public CourseService(CourseRepository courseRepo, WorkItemRepository workItemRepo) {
+    public CourseService(CourseRepository courseRepo, WorkItemRepository workItemRepo, TopicRepository topicRepo) {
         this.courseRepo = courseRepo;
         this.workItemRepo = workItemRepo;
+        this.topicRepo = topicRepo;
     }
 
     @Transactional(readOnly = true)
@@ -94,5 +99,10 @@ public class CourseService {
         }
         course.setStartDate(form.startDate());
         course.setTargetCompletion(form.targetCompletion());
+        if (form.topicIds() != null && !form.topicIds().isEmpty()) {
+            course.setTopics(new HashSet<>(topicRepo.findAllById(form.topicIds())));
+        } else {
+            course.setTopics(new HashSet<>());
+        }
     }
 }

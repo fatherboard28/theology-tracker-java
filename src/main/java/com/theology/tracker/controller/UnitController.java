@@ -2,6 +2,7 @@ package com.theology.tracker.controller;
 
 import com.theology.tracker.dto.UnitFormDto;
 import com.theology.tracker.model.Unit;
+import com.theology.tracker.service.TopicService;
 import com.theology.tracker.service.UnitService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +20,18 @@ import java.util.List;
 public class UnitController {
 
     private final UnitService unitService;
+    private final TopicService topicService;
 
-    public UnitController(UnitService unitService) {
+    public UnitController(UnitService unitService, TopicService topicService) {
         this.unitService = unitService;
+        this.topicService = topicService;
     }
 
     @GetMapping("/new")
     public String newForm(@PathVariable Long courseId, Model model) {
         model.addAttribute("courseId", courseId);
         model.addAttribute("unit", new Unit());
+        model.addAttribute("allTopics", topicService.findAllOrdered());
         model.addAttribute("formAction", "/courses/" + courseId + "/units");
         model.addAttribute("pageTitle", "New Unit");
         return "units/form";
@@ -39,9 +43,10 @@ public class UnitController {
         @RequestParam String title,
         @RequestParam(required = false) String description,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetCompletion,
+        @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        UnitFormDto form = new UnitFormDto(title, description, targetCompletion);
+        UnitFormDto form = new UnitFormDto(title, description, targetCompletion, topicIds);
         unitService.create(courseId, form);
         ra.addFlashAttribute("successMessage", "Unit added.");
         return "redirect:/courses/" + courseId;
@@ -52,6 +57,7 @@ public class UnitController {
         Unit unit = unitService.findById(unitId);
         model.addAttribute("courseId", courseId);
         model.addAttribute("unit", unit);
+        model.addAttribute("allTopics", topicService.findAllOrdered());
         model.addAttribute("formAction", "/courses/" + courseId + "/units/" + unitId);
         model.addAttribute("pageTitle", "Edit Unit");
         return "units/form";
@@ -64,9 +70,10 @@ public class UnitController {
         @RequestParam String title,
         @RequestParam(required = false) String description,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetCompletion,
+        @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        UnitFormDto form = new UnitFormDto(title, description, targetCompletion);
+        UnitFormDto form = new UnitFormDto(title, description, targetCompletion, topicIds);
         unitService.update(unitId, form);
         ra.addFlashAttribute("successMessage", "Unit updated.");
         return "redirect:/courses/" + courseId;

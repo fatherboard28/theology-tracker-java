@@ -784,6 +784,75 @@ select.form-control {
     background: var(--parchment-200);
 }
 
+/* ── Topic Cards ──────────────────────────────────────────────────────────── */
+.topic-list { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.topic-card {
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--parchment-300);
+    border-radius: var(--radius-md);
+    background: var(--parchment-100);
+    transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+
+.topic-card:hover {
+    border-color: var(--gold-muted);
+    box-shadow: var(--shadow-sm);
+}
+
+.topic-card-sub {
+    margin-left: var(--space-8);
+    background: white;
+    border-color: var(--parchment-400);
+}
+
+.topic-card-title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--ink-900);
+    text-decoration: none;
+}
+
+.topic-card-title:hover { color: var(--gold); }
+
+.topic-link {
+    color: var(--gold);
+    font-weight: 500;
+}
+
+/* ── Topic Tag Chips ──────────────────────────────────────────────────────── */
+.topic-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.topic-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px var(--space-3);
+    border-radius: 99px;
+    background: rgba(176, 141, 87, 0.1);
+    border: 1px solid var(--gold-muted);
+    font-size: var(--text-sm);
+    color: var(--ink-700);
+    white-space: nowrap;
+}
+
+.topic-tag a {
+    color: var(--ink-700);
+    text-decoration: none;
+}
+
+.topic-tag a:hover { color: var(--gold); }
+
+.topic-tag-sm {
+    padding: 2px var(--space-2);
+    font-size: var(--text-xs);
+}
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .nav-links {

@@ -6,12 +6,14 @@ import com.theology.tracker.model.Course;
 import com.theology.tracker.model.Unit;
 import com.theology.tracker.model.WorkItemStatus;
 import com.theology.tracker.repository.CourseRepository;
+import com.theology.tracker.repository.TopicRepository;
 import com.theology.tracker.repository.UnitRepository;
 import com.theology.tracker.repository.WorkItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -21,11 +23,13 @@ public class UnitService {
     private final UnitRepository unitRepo;
     private final CourseRepository courseRepo;
     private final WorkItemRepository workItemRepo;
+    private final TopicRepository topicRepo;
 
-    public UnitService(UnitRepository unitRepo, CourseRepository courseRepo, WorkItemRepository workItemRepo) {
+    public UnitService(UnitRepository unitRepo, CourseRepository courseRepo, WorkItemRepository workItemRepo, TopicRepository topicRepo) {
         this.unitRepo = unitRepo;
         this.courseRepo = courseRepo;
         this.workItemRepo = workItemRepo;
+        this.topicRepo = topicRepo;
     }
 
     @Transactional(readOnly = true)
@@ -93,5 +97,10 @@ public class UnitService {
         unit.setDescription(form.description() != null && !form.description().isBlank()
             ? form.description().trim() : null);
         unit.setTargetCompletion(form.targetCompletion());
+        if (form.topicIds() != null && !form.topicIds().isEmpty()) {
+            unit.setTopics(new HashSet<>(topicRepo.findAllById(form.topicIds())));
+        } else {
+            unit.setTopics(new HashSet<>());
+        }
     }
 }

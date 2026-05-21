@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title th:text="${topic.title}">Topic</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Breadcrumb & actions -->
+    <div class="page-header">
+        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+            <a th:href="@{/topics}" class="btn btn-secondary btn-sm">&larr; Topics</a>
+            <span th:if="${topic.parentTopic != null}" class="text-muted text-small">
+                under <a th:href="@{/topics/{id}(id=${topic.parentTopic.id})}"
+                         th:text="${topic.parentTopic.title}">Parent</a>
+            </span>
+        </div>
+        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+            <div style="flex: 1; min-width: 0;">
+                <div class="d-flex align-center gap-4" style="margin-bottom: 0.5rem; flex-wrap: wrap;">
+                    <h1 class="page-title" style="margin: 0;" th:text="${topic.title}">Topic Title</h1>
+                    <span class="badge" th:text="${topic.type.name().replace('_', ' ')}">TYPE</span>
+                </div>
+                <p class="page-subtitle" th:if="${topic.description}" th:text="${topic.description}"></p>
+            </div>
+            <div class="d-flex gap-2">
+                <a th:href="@{/topics/{id}/edit(id=${topic.id})}" class="btn btn-secondary btn-sm">Edit</a>
+                <form th:action="@{/topics/{id}/delete(id=${topic.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            th:attr="data-confirm='Delete topic &quot;' + ${topic.title} + '&quot;? Subtopics will become root topics.'">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parent topic assignment -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <div class="form-label" style="margin-bottom: 0.5rem;">Parent Topic</div>
+                    <div th:if="${topic.parentTopic != null}">
+                        <a th:href="@{/topics/{id}(id=${topic.parentTopic.id})}"
+                           th:text="${topic.parentTopic.title}" class="topic-link"></a>
+                    </div>
+                    <div th:if="${topic.parentTopic == null}" class="text-muted text-small">
+                        Root topic &mdash; no parent
+                    </div>
+                    <div style="margin-top: 0.75rem;">
+                        <form th:action="@{/topics/{id}/edit(id=${topic.id})}" method="get" style="display:inline;">
+                            <button type="submit" class="btn btn-secondary btn-sm">Change Parent</button>
+                        </form>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-label" style="margin-bottom: 0.5rem;">Created</div>
+                    <div class="text-small text-muted"
+                         th:text="${#temporals.format(topic.createdAt, 'MMM d, yyyy')}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subtopics section -->
+    <div th:if="${topic.parentTopic == null}">
+        <div class="section-header">
+            <h2>Subtopics</h2>
+            <a th:href="@{/topics/new(parentTopicId=${topic.id})}" class="btn btn-secondary btn-sm">+ Add Subtopic</a>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(topic.subtopics)}">
+            <p>No subtopics yet.
+                <a th:href="@{/topics/new(parentTopicId=${topic.id})}">Add a subtopic</a>
+                to organize this topic further.
+            </p>
+        </div>
+
+        <div class="topic-list" th:if="${!#lists.isEmpty(topic.subtopics)}">
+            <div class="topic-card" th:each="sub : ${topic.subtopics}">
+                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="d-flex align-center gap-4" style="flex-wrap: wrap;">
+                            <a class="topic-card-title"
+                               th:href="@{/topics/{id}(id=${sub.id})}"
+                               th:text="${sub.title}">Subtopic</a>
+                            <span class="badge"
+                                  th:text="${sub.type.name().replace('_', ' ')}">TYPE</span>
+                        </div>
+                        <p class="text-small text-muted" style="margin: 0.25rem 0 0;"
+                           th:if="${sub.description}" th:text="${sub.description}"></p>
+                    </div>
+                    <div class="d-flex gap-2" style="flex-shrink: 0;">
+                        <a th:href="@{/topics/{id}/edit(id=${sub.id})}" class="btn btn-secondary btn-sm">Edit</a>
+                        <form th:action="@{/topics/{id}/delete(id=${sub.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    th:attr="data-confirm='Delete subtopic &quot;' + ${sub.title} + '&quot;?'">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholder for future Topic View sections (Phase 13) -->
+    <div style="margin-top: 2rem;">
+        <p class="text-muted text-small" style="font-style: italic;">
+            Owned work items, tagged courses, units, notes, and sessions will appear here in a future phase.
+        </p>
+    </div>
+
+</div>
+</body>
+</html>
