@@ -15,9 +15,6 @@ import org.springframework.ui.Model;
 @Controller
 public class StubControllers {
 
-    @GetMapping("/courses")
-    public String courses() { return "courses/index"; }
-
     @GetMapping("/topics")
     public String topics() { return "topics/index"; }
 

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title th:text="${pageTitle}">Course</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div class="d-flex align-center gap-4">
+            <a th:href="@{/courses}" class="btn btn-secondary btn-sm">&larr; Courses</a>
+            <h1 class="page-title" style="margin: 0;" th:text="${pageTitle}">Course</h1>
+        </div>
+    </div>
+
+    <div class="card" style="max-width: 680px;">
+        <div class="card-body">
+            <form th:action="${formAction}" method="post">
+
+                <div class="form-group">
+                    <label class="form-label required" for="title">Title</label>
+                    <input type="text" id="title" name="title" class="form-control"
+                           th:value="${course.title}" placeholder="e.g. Systematic Theology" required autofocus/>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">Description</label>
+                    <textarea id="description" name="description" class="form-control" rows="3"
+                              placeholder="Optional overview of this course..."
+                              th:text="${course.description}"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required" for="status">Status</label>
+                    <select id="status" name="status" class="form-control">
+                        <option th:each="s : ${statuses}"
+                                th:value="${s.name()}"
+                                th:text="${s}"
+                                th:selected="${course.status != null and course.status == s}">
+                        </option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="startDate">Start Date</label>
+                        <input type="date" id="startDate" name="startDate" class="form-control"
+                               th:value="${course.startDate}"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="targetCompletion">Target Completion</label>
+                        <input type="date" id="targetCompletion" name="targetCompletion" class="form-control"
+                               th:value="${course.targetCompletion}"/>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-4" style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" th:text="${pageTitle}">Save</button>
+                    <a th:href="@{/courses}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

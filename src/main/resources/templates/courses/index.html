@@ -6,13 +6,62 @@
 <head><title>Courses</title></head>
 <body>
 <div layout:fragment="content">
+
     <div class="page-header">
-        <h1 class="page-title">Courses</h1>
-        <p class="page-subtitle">Coming in a future phase.</p>
+        <div class="d-flex align-center" style="justify-content: space-between;">
+            <div>
+                <h1 class="page-title">Courses</h1>
+                <p class="page-subtitle">Your structured study courses and their units.</p>
+            </div>
+            <a th:href="@{/courses/new}" class="btn btn-primary">+ New Course</a>
+        </div>
     </div>
-    <div class="empty-state">
-        <p>This section will be implemented in a future phase. <a th:href="@{/dashboard}">← Back to Dashboard</a></p>
+
+    <!-- Empty state -->
+    <div class="empty-state" th:if="${#lists.isEmpty(courses)}">
+        <p>No courses yet. <a th:href="@{/courses/new}">Create your first course</a> to get started.</p>
     </div>
+
+    <!-- Course list -->
+    <div class="course-list" th:if="${!#lists.isEmpty(courses)}">
+        <div class="course-card" th:each="course : ${courses}">
+            <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+                <div style="flex: 1; min-width: 0;">
+                    <a class="course-card-title"
+                       th:href="@{/courses/{id}(id=${course.id})}"
+                       th:text="${course.title}">Course Title</a>
+                    <p class="text-muted text-small" style="margin: 0 0 0.5rem;"
+                       th:if="${course.description}" th:text="${course.description}"></p>
+                    <div class="progress-bar" style="margin-top: 0.5rem;">
+                        <div class="progress-fill"
+                             th:style="'width: ' + ${progressMap[course.id]} + '%'"></div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0;">
+                    <span class="badge"
+                          th:classappend="${course.status.name() == 'ACTIVE' ? 'badge-active' : (course.status.name() == 'PAUSED' ? 'badge-paused' : 'badge-complete')}"
+                          th:text="${course.status}">ACTIVE</span>
+                    <span class="text-small text-muted">
+                        <span th:text="${progressMap[course.id]}">0</span>% complete
+                        &mdash; <span th:text="${#lists.size(course.units)}">0</span> unit(s)
+                    </span>
+                    <span class="text-small text-muted" th:if="${course.targetCompletion != null}">
+                        Target: <span th:text="${#temporals.format(course.targetCompletion, 'MMM d, yyyy')}"></span>
+                    </span>
+                </div>
+                <div class="d-flex gap-2" style="flex-shrink: 0;">
+                    <a th:href="@{/courses/{id}/edit(id=${course.id})}" class="btn btn-secondary btn-sm">Edit</a>
+                    <form th:action="@{/courses/{id}/delete(id=${course.id})}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                th:data-confirm="'Delete course &quot;' + ${course.title} + '&quot;? This will also delete all its units and work items.'">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 </body>
 </html>

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.theology.tracker.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -16,6 +17,15 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String handleResourceNotFound(ResourceNotFoundException ex, Model model, HttpServletRequest request) {
+        model.addAttribute("status",  404);
+        model.addAttribute("message", ex.getMessage());
+        model.addAttribute("path",    request.getRequestURI());
+        return "error/error";
+    }
 
     @ExceptionHandler(NoHandlerFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
