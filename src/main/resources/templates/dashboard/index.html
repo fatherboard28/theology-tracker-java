@@ -3,129 +3,16 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
-
-<head>
-    <title>Dashboard</title>
-</head>
-
+<head><title>Dashboard</title></head>
 <body>
 <div layout:fragment="content">
-
     <div class="page-header">
         <h1 class="page-title">Dashboard</h1>
         <p class="page-subtitle">Your study at a glance</p>
     </div>
-
-    <!-- ── Streak & Time Summary ──────────────────────────────────────── -->
-    <section class="stat-grid">
-        <div class="stat-card">
-            <div class="stat-value" th:text="${currentStreak != null ? currentStreak : 0}">0</div>
-            <div class="stat-label">Day Streak</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" th:text="${longestStreak != null ? longestStreak : 0}">0</div>
-            <div class="stat-label">All-Time Streak</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" th:text="${weekMinutes != null ? weekMinutes : 0}">0</div>
-            <div class="stat-label">Minutes This Week</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" th:text="${monthMinutes != null ? monthMinutes : 0}">0</div>
-            <div class="stat-label">Minutes This Month</div>
-        </div>
-    </section>
-
-    <!-- ── Active Courses ─────────────────────────────────────────────── -->
-    <section class="dashboard-section">
-        <div class="section-header">
-            <h2>Active Courses</h2>
-            <a th:href="@{/courses/new}" class="btn btn-sm btn-primary">+ New Course</a>
-        </div>
-
-        <div th:if="${#lists.isEmpty(activeCourses)}" class="empty-state">
-            <p>No active courses yet. <a th:href="@{/courses/new}">Create your first course →</a></p>
-        </div>
-
-        <div class="course-list" th:if="${not #lists.isEmpty(activeCourses)}">
-            <div class="course-card" th:each="course : ${activeCourses}">
-                <a class="course-card-title" th:href="@{/courses/{id}(id=${course.id})}"
-                   th:text="${course.title}">Course Title</a>
-                <div class="progress-bar">
-                    <div class="progress-fill"
-                         th:style="'width: ' + ${course.progressPercent} + '%'"
-                         th:attr="aria-valuenow=${course.progressPercent}"></div>
-                </div>
-                <div class="course-card-meta">
-                    <span th:text="${course.progressPercent} + '% complete'">0% complete</span>
-                    <span th:if="${course.targetCompletion != null}"
-                          th:text="'Due ' + ${#temporals.format(course.targetCompletion, 'MMM d, yyyy')}">Due date</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ── Upcoming Due Dates ─────────────────────────────────────────── -->
-    <section class="dashboard-section">
-        <div class="section-header">
-            <h2>Due in the Next 7 Days</h2>
-        </div>
-
-        <div th:if="${#lists.isEmpty(upcomingDue)}" class="empty-state">
-            <p>Nothing due in the next 7 days.</p>
-        </div>
-
-        <ul class="due-list" th:if="${not #lists.isEmpty(upcomingDue)}">
-            <li class="due-item" th:each="item : ${upcomingDue}">
-                <span class="due-date"
-                      th:text="${#temporals.format(item.dueDate, 'EEE MMM d')}">Mon Jan 1</span>
-                <a th:href="@{/work-items/{id}(id=${item.id})}"
-                   th:text="${item.title}"
-                   class="due-title">Item title</a>
-                <span class="due-type badge"
-                      th:text="${item.type}">TYPE</span>
-            </li>
-        </ul>
-    </section>
-
-    <!-- ── Recent Notes & Work Items ─────────────────────────────────── -->
-    <div class="dashboard-columns">
-        <section class="dashboard-section">
-            <div class="section-header">
-                <h2>Recent Notes</h2>
-                <a th:href="@{/notes}" class="btn btn-sm btn-secondary">All notes</a>
-            </div>
-            <ul class="recent-list" th:if="${not #lists.isEmpty(recentNotes)}">
-                <li th:each="note : ${recentNotes}">
-                    <a th:href="@{/notes/{id}(id=${note.id})}"
-                       th:text="${note.title}">Note title</a>
-                    <span class="recent-date"
-                          th:text="${#temporals.format(note.updatedAt, 'MMM d')}">Jan 1</span>
-                </li>
-            </ul>
-            <div th:if="${#lists.isEmpty(recentNotes)}" class="empty-state">
-                <p>No notes yet.</p>
-            </div>
-        </section>
-
-        <section class="dashboard-section">
-            <div class="section-header">
-                <h2>Recent Work Items</h2>
-                <a th:href="@{/work-items}" class="btn btn-sm btn-secondary">All items</a>
-            </div>
-            <ul class="recent-list" th:if="${not #lists.isEmpty(recentWorkItems)}">
-                <li th:each="item : ${recentWorkItems}">
-                    <a th:href="@{/work-items/{id}(id=${item.id})}"
-                       th:text="${item.title}">Item title</a>
-                    <span class="badge" th:text="${item.status}">STATUS</span>
-                </li>
-            </ul>
-            <div th:if="${#lists.isEmpty(recentWorkItems)}" class="empty-state">
-                <p>No work items yet.</p>
-            </div>
-        </section>
+    <div class="empty-state">
+        <p>Dashboard widgets will be implemented in Phase 11.</p>
     </div>
-
 </div>
 </body>
 </html>
