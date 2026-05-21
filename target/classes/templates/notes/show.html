@@ -5,112 +5,206 @@
       layout:decorate="~{layout/base}">
 <head><title th:text="${note.title}">Note</title></head>
 <body>
+<!--
+  Single-page note editor.
+  Alpine manages two states: editing (textarea) vs viewing (rendered markdown).
+  The hidden #note-body-raw element holds the server-provided body; Alpine reads
+  it at init time (safe because Alpine boots after defer scripts finish).
+  The main form saves title + topics + body together.
+  Autosave (body only) fires 800 ms after the user stops typing.
+-->
 <div layout:fragment="content">
 
-    <div class="page-header">
-        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
-            <a th:href="${parent.url()}" class="btn btn-secondary btn-sm">&larr; Back</a>
-        </div>
-        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-            <div style="flex: 1; min-width: 0;">
-                <h1 class="page-title" style="margin: 0;" th:text="${note.title}">Note Title</h1>
-                <p class="page-subtitle" style="margin-top: 0.25rem;">
-                    <span class="text-muted">In</span>
-                    <span th:text="${parent.type().name().replace('_', ' ')}">TYPE</span>
-                    &mdash;
-                    <a th:href="${parent.url()}" th:text="${parent.label()}">Parent</a>
-                    &nbsp;&mdash;&nbsp;
-                    <span class="text-muted">Modified</span>
-                    <span th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy h:mm a')}"></span>
-                </p>
-            </div>
-            <div class="d-flex gap-2" style="flex-shrink: 0;">
-                <a th:href="@{/notes/{id}/edit(id=${note.id})}" class="btn btn-primary btn-sm">Edit</a>
-                <form th:action="@{/notes/{id}/delete(id=${note.id})}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm"
+    <!-- Hidden raw body for Alpine initialisation -->
+    <div id="note-body-raw" style="display:none;" th:text="${note.body}"></div>
+
+    <div x-data="noteEditor()" x-init="init()" th:data-note-id="${note.id}">
+
+        <!-- ── Main form — saves title, topics, body ── -->
+        <form th:action="@{/notes/{id}(id=${note.id})}" method="post" id="note-main-form">
+            <input type="hidden" name="parentType" th:value="${note.primaryParentType.name()}"/>
+            <input type="hidden" name="parentId"   th:value="${note.primaryParentId}"/>
+            <!-- body hidden field kept in sync by Alpine -->
+            <input type="hidden" name="body" :value="rawBody"/>
+
+            <!-- ── Page header ── -->
+            <div class="note-page-header">
+                <div class="d-flex align-center gap-4" style="margin-bottom: 0.75rem;">
+                    <a th:href="${parent.url()}" class="btn btn-secondary btn-sm">&larr; Back</a>
+                </div>
+
+                <!-- Title -->
+                <input type="text" name="title" class="note-title-input"
+                       th:value="${note.title}" placeholder="Note title" required/>
+
+                <!-- Meta row -->
+                <div class="note-meta-row">
+                    <span class="text-muted text-small">
+                        <span th:text="${parent.type().name().replace('_',' ')}">TYPE</span>
+                        &mdash;
+                        <a th:href="${parent.url()}" th:text="${parent.label()}">Parent</a>
+                    </span>
+                    <span class="text-muted text-small">
+                        Modified <span th:text="${#temporals.format(note.updatedAt,'MMM d, yyyy')}"></span>
+                    </span>
+                    <span x-text="saveStatus" class="text-small" style="font-style:italic; color:var(--gray-400);"></span>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex gap-2" style="margin-top: 0.75rem;">
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                    <button type="submit"
+                            formaction="/notes/[[${note.id}]]/delete"
+                            class="btn btn-danger btn-sm"
                             th:attr="data-confirm=${!note.workItemRefs.isEmpty()
-                                ? 'Delete note &quot;' + note.title + '&quot;? This will remove ' + note.workItemRefs.size() + ' work item reference(s).'
-                                : 'Delete note &quot;' + note.title + '&quot;?'}">
+                                ? 'Delete &quot;' + note.title + '&quot;? This will remove ' + note.workItemRefs.size() + ' work item reference(s).'
+                                : 'Delete &quot;' + note.title + '&quot;?'}">
                         Delete
                     </button>
+                </div>
+            </div>
+
+            <!-- ── Topic tags ── -->
+            <div th:replace="~{topics/tag-select-fragment :: topicMultiSelect(${allTopics}, ${note.topicTags.![id]})}"></div>
+
+        </form><!-- end note-main-form -->
+
+        <!-- ── Body editor (outside the form, but rawBody is synced via the hidden input) ── -->
+        <div class="note-body-section">
+
+            <!-- Toolbar -->
+            <div class="d-flex align-center" style="justify-content: space-between; margin-bottom: 0.5rem;">
+                <span class="form-label" style="margin:0;">Content</span>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        @click="toggleMode()"
+                        x-text="editing ? 'Preview' : 'Edit'">Edit</button>
+            </div>
+
+            <!-- View mode: rendered markdown — click anywhere to edit -->
+            <div x-show="!editing" x-cloak
+                 x-html="renderedBody"
+                 @click="startEditing()"
+                 class="note-view-body markdown-preview"
+                 title="Click to edit"></div>
+
+            <!-- Edit mode: textarea -->
+            <textarea x-show="editing" x-cloak
+                      x-ref="editor"
+                      x-model="rawBody"
+                      @input="onInput()"
+                      class="form-control note-body-textarea"
+                      placeholder="Write in Markdown…"></textarea>
+
+        </div>
+
+        <!-- ── Referenced work items (own forms, outside note-main-form) ── -->
+        <div style="margin-top: 2rem;">
+            <div class="section-header">
+                <h2>Referenced Work Items</h2>
+            </div>
+
+            <div th:if="${!#sets.isEmpty(note.workItemRefs)}">
+                <div th:each="wi : ${note.workItemRefs}"
+                     class="d-flex align-center gap-4"
+                     style="padding: 0.5rem 0; border-bottom: 1px solid var(--gray-100); flex-wrap: wrap;">
+                    <a th:href="@{/work-items/{id}(id=${wi.id})}"
+                       th:text="${wi.title}" style="flex:1; min-width:0;">Work Item</a>
+                    <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
+                    <form th:action="@{/notes/{nid}/work-items/{wiid}/detach(nid=${note.id},wiid=${wi.id})}"
+                          method="post" style="display:inline; flex-shrink:0;">
+                        <button type="submit" class="btn btn-secondary btn-sm">Detach</button>
+                    </form>
+                </div>
+            </div>
+
+            <div th:if="${#sets.isEmpty(note.workItemRefs)}"
+                 class="text-small text-muted" style="font-style:italic; padding: 0.5rem 0;">
+                No work items referenced yet.
+            </div>
+
+            <div style="margin-top: 0.75rem;" th:if="${!#lists.isEmpty(availableWorkItems)}">
+                <form th:action="@{/notes/{id}/work-items/attach(id=${note.id})}" method="post"
+                      class="d-flex gap-2" style="flex-wrap: wrap;">
+                    <select name="workItemId" class="form-control" style="max-width: 420px; flex:1;">
+                        <option th:each="wi : ${availableWorkItems}"
+                                th:value="${wi.id}"
+                                th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0;">Attach</button>
                 </form>
             </div>
         </div>
-    </div>
 
-    <!-- Topic tags -->
-    <div style="margin-bottom: 1.5rem;" th:if="${!#sets.isEmpty(note.topicTags)}">
-        <div class="topic-tags-row">
-            <span th:each="topic : ${note.topicTags}" class="topic-tag">
-                <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
-            </span>
-        </div>
-    </div>
-
-    <!-- Note body — client-side markdown rendering -->
-    <div class="card" style="margin-bottom: 2rem;">
-        <div class="card-body">
-            <div id="note-body-raw" style="display:none;" th:text="${note.body}"></div>
-            <div id="note-body-rendered" class="markdown-preview"
-                 style="background:transparent; border:none; padding:0; min-height:60px;"></div>
-            <div th:if="${note.body == null or note.body.isBlank()}"
-                 class="text-muted text-small" style="font-style:italic;">
-                No content yet. <a th:href="@{/notes/{id}/edit(id=${note.id})}">Start writing</a>.
-            </div>
-        </div>
-    </div>
-
-    <!-- Referenced work items -->
-    <div class="section-header" style="margin-top: 2rem;">
-        <h2>Referenced Work Items</h2>
-    </div>
-
-    <div th:if="${!#sets.isEmpty(note.workItemRefs)}">
-        <div th:each="wi : ${note.workItemRefs}"
-             class="d-flex align-center gap-4"
-             style="padding: 0.6rem 0; border-bottom: 1px solid var(--gray-200); flex-wrap: wrap;">
-            <a th:href="@{/work-items/{id}(id=${wi.id})}"
-               th:text="${wi.title}" style="flex: 1; min-width: 0;">Work Item</a>
-            <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
-            <form th:action="@{/notes/{nid}/work-items/{wiid}/detach(nid=${note.id},wiid=${wi.id})}"
-                  method="post" style="display:inline; flex-shrink: 0;">
-                <button type="submit" class="btn btn-secondary btn-sm">Detach</button>
-            </form>
-        </div>
-    </div>
-
-    <div th:if="${#sets.isEmpty(note.workItemRefs)}"
-         class="text-small text-muted" style="font-style:italic; padding: 0.5rem 0;">
-        No work items referenced.
-    </div>
-
-    <!-- Attach work item -->
-    <div style="margin-top: 1rem;" th:if="${!#lists.isEmpty(availableWorkItems)}">
-        <form th:action="@{/notes/{id}/work-items/attach(id=${note.id})}" method="post"
-              class="d-flex gap-2" style="flex-wrap: wrap;">
-            <select name="workItemId" class="form-control" style="max-width: 420px; flex: 1;">
-                <option th:each="wi : ${availableWorkItems}"
-                        th:value="${wi.id}"
-                        th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
-            </select>
-            <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Attach</button>
-        </form>
-    </div>
-
+    </div><!-- end x-data -->
 </div>
 <th:block layout:fragment="scripts">
 <script>
-(function () {
-    const raw = document.getElementById('note-body-raw');
-    const rendered = document.getElementById('note-body-rendered');
-    if (raw && rendered && typeof marked !== 'undefined') {
-        const body = raw.textContent;
-        if (body && body.trim()) {
-            rendered.innerHTML = marked.parse(body);
-            rendered.style.display = '';
+function noteEditor() {
+    // Alpine evaluates x-data after defer scripts load, so marked and the DOM are ready.
+    const rawEl = document.getElementById('note-body-raw');
+    const initial = rawEl ? rawEl.textContent : '';
+
+    return {
+        rawBody:      initial,
+        editing:      !initial.trim(),   // start in edit mode when the note is empty
+        renderedBody: '',
+        saveStatus:   '',
+        saveTimer:    null,
+        noteId:       null,
+
+        init() {
+            this.noteId = this.$el.dataset.noteId;
+            this.render();
+        },
+
+        render() {
+            if (typeof marked !== 'undefined' && this.rawBody.trim()) {
+                this.renderedBody = marked.parse(this.rawBody);
+            } else {
+                this.renderedBody =
+                    '<p style="color:var(--gray-400);font-style:italic;margin:0;">No content yet — click to start writing.</p>';
+            }
+        },
+
+        startEditing() {
+            this.editing = true;
+            this.$nextTick(() => this.$refs.editor && this.$refs.editor.focus());
+        },
+
+        toggleMode() {
+            if (this.editing) {
+                this.render();
+                this.editing = false;
+            } else {
+                this.startEditing();
+            }
+        },
+
+        onInput() {
+            clearTimeout(this.saveTimer);
+            this.saveStatus = 'Saving…';
+            this.saveTimer = setTimeout(() => this.doAutosave(), 800);
+        },
+
+        async doAutosave() {
+            try {
+                const resp = await fetch(`/notes/${this.noteId}/autosave`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'body=' + encodeURIComponent(this.rawBody)
+                });
+                if (resp.ok) {
+                    const html = await resp.text();
+                    const tmp = document.createElement('span');
+                    tmp.innerHTML = html;
+                    this.saveStatus = tmp.textContent.trim();
+                }
+            } catch (_) {
+                this.saveStatus = 'Save failed';
+            }
         }
-    }
-})();
+    };
+}
 </script>
 </th:block>
 </body>

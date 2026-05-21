@@ -983,31 +983,70 @@ select.form-control {
     color: var(--gray-700);
 }
 
-/* ── Note Editor (split-pane) ─────────────────────────────────────────────── */
-.note-editor-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-    align-items: start;
+/* ── Note page — combined view/edit ──────────────────────────────────────── */
+.note-page-header {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--gray-200);
 }
 
-.note-editor-pane,
-.note-preview-pane {
+.note-title-input {
+    display: block;
+    width: 100%;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--gray-900);
+    letter-spacing: -0.02em;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 0 0 var(--space-1);
+    margin-bottom: var(--space-2);
+    transition: border-color var(--duration) var(--ease);
+    font-family: var(--font-sans);
+}
+.note-title-input:focus {
+    outline: none;
+    border-bottom-color: var(--brand);
+}
+.note-title-input::placeholder { color: var(--gray-300); font-weight: 400; }
+
+.note-meta-row {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    font-size: var(--text-sm);
+    color: var(--gray-500);
 }
 
-.note-editor-textarea {
-    resize: vertical;
-    min-height: 440px;
+.note-body-section {
+    margin-bottom: var(--space-6);
+}
+
+/* View mode: rendered markdown, clickable */
+.note-view-body {
+    min-height: 280px;
+    cursor: text;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    transition: border-color var(--duration) var(--ease), background var(--duration) var(--ease);
+}
+.note-view-body:hover {
+    border-color: var(--gray-200);
+    background: var(--gray-50);
+}
+
+/* Edit mode: full-width textarea */
+.note-body-textarea {
+    width: 100%;
+    min-height: 420px;
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     line-height: 1.65;
-}
-
-.note-editor-preview {
-    min-height: 440px;
-    overflow-y: auto;
+    resize: vertical;
 }
 
 /* ── Note Cards (listing) ─────────────────────────────────────────────────── */

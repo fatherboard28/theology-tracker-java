@@ -159,7 +159,7 @@
     <!-- Referenced Notes (Assignment, Paper, Practice Session only) -->
     <div class="card" style="margin-bottom: 1.5rem;" th:if="${reading == null}">
         <div class="card-body">
-            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Referenced Notes</h2>
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Attachments</h2>
             <div th:if="${!#sets.isEmpty(item.notes)}">
                 <div th:each="note : ${item.notes}"
                      class="d-flex align-center gap-4"

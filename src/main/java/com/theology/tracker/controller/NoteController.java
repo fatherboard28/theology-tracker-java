@@ -72,7 +72,7 @@ public class NoteController {
     ) {
         Note note = noteService.create(new NoteFormDto(title, body, parentType, parentId, topicIds));
         ra.addFlashAttribute("successMessage", "Note created.");
-        return "redirect:/notes/" + note.getId() + "/edit";
+        return "redirect:/notes/" + note.getId();
     }
 
     @GetMapping("/{id}")
@@ -84,20 +84,9 @@ public class NoteController {
             .toList();
         model.addAttribute("note", note);
         model.addAttribute("parent", parent);
+        model.addAttribute("allTopics", topicService.findAllOrdered());
         model.addAttribute("availableWorkItems", availableRefs);
         return "notes/show";
-    }
-
-    @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
-        Note note = noteService.findById(id);
-        ParentInfo parent = noteService.resolveParent(note.getPrimaryParentType(), note.getPrimaryParentId());
-        model.addAttribute("note", note);
-        model.addAttribute("parent", parent);
-        model.addAttribute("allTopics", topicService.findAllOrdered());
-        model.addAttribute("pageTitle", "Edit Note");
-        model.addAttribute("formAction", "/notes/" + id);
-        return "notes/form";
     }
 
     @PostMapping("/{id}")
