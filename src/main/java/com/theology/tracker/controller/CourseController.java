@@ -3,7 +3,9 @@ package com.theology.tracker.controller;
 import com.theology.tracker.dto.CourseFormDto;
 import com.theology.tracker.model.Course;
 import com.theology.tracker.model.CourseStatus;
+import com.theology.tracker.model.NoteParentType;
 import com.theology.tracker.service.CourseService;
+import com.theology.tracker.service.NoteService;
 import com.theology.tracker.service.TopicService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -22,10 +24,12 @@ public class CourseController {
 
     private final CourseService courseService;
     private final TopicService topicService;
+    private final NoteService noteService;
 
-    public CourseController(CourseService courseService, TopicService topicService) {
+    public CourseController(CourseService courseService, TopicService topicService, NoteService noteService) {
         this.courseService = courseService;
         this.topicService = topicService;
+        this.noteService = noteService;
     }
 
     @GetMapping
@@ -71,6 +75,7 @@ public class CourseController {
         model.addAttribute("progress", courseService.calculateProgress(course));
         model.addAttribute("units", course.getUnits());
         model.addAttribute("statuses", CourseStatus.values());
+        model.addAttribute("notes", noteService.findByParent(NoteParentType.COURSE, id));
         return "courses/show";
     }
 

@@ -155,10 +155,53 @@
         </div>
     </div>
 
-    <!-- Placeholder for remaining Topic View sections (Phase 13) -->
+    <!-- Notes section -->
+    <div style="margin-top: 2rem;">
+        <div class="section-header">
+            <h2>Notes</h2>
+            <a th:href="@{/notes/new(parentType='TOPIC',parentId=${topic.id})}"
+               class="btn btn-primary btn-sm">+ Add Note</a>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(notes)}" style="padding: 2rem 0;">
+            <p>No notes yet.
+                <a th:href="@{/notes/new(parentType='TOPIC',parentId=${topic.id})}">Add a note</a>
+                to this topic.
+            </p>
+        </div>
+
+        <div class="note-list" th:if="${!#lists.isEmpty(notes)}">
+            <div class="note-card" th:each="note : ${notes}">
+                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="d-flex align-center gap-4" style="margin-bottom: 0.25rem; flex-wrap: wrap;">
+                            <a class="note-card-title"
+                               th:href="@{/notes/{id}(id=${note.id})}"
+                               th:text="${note.title}">Note</a>
+                            <span class="text-small text-muted"
+                                  th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
+                        </div>
+                        <div class="note-preview"
+                             th:if="${note.body != null and !note.body.isBlank()}"
+                             th:text="${#strings.abbreviate(note.body, 120)}"></div>
+                        <div th:if="${!#sets.isEmpty(note.topicTags)}"
+                             class="topic-tags-row" style="margin-top: 0.3rem;">
+                            <span th:each="topic : ${note.topicTags}" class="topic-tag topic-tag-sm">
+                                <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
+                            </span>
+                        </div>
+                    </div>
+                    <a th:href="@{/notes/{id}/edit(id=${note.id})}"
+                       class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Edit</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholder for tagged courses, units, sessions (Phase 13) -->
     <div style="margin-top: 2rem;">
         <p class="text-muted text-small" style="font-style: italic;">
-            Tagged courses, units, notes, and sessions will appear here in a future phase.
+            Tagged courses, units, and sessions will appear here in a future phase.
         </p>
     </div>
 

@@ -156,6 +156,27 @@
         </div>
     </div>
 
+    <!-- Referenced Notes (Assignment, Paper, Practice Session only) -->
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${reading == null}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Referenced Notes</h2>
+            <div th:if="${!#sets.isEmpty(item.notes)}">
+                <div th:each="note : ${item.notes}"
+                     class="d-flex align-center gap-4"
+                     style="padding: 0.5rem 0; border-bottom: 1px solid var(--gray-100);">
+                    <a th:href="@{/notes/{id}(id=${note.id})}"
+                       th:text="${note.title}" style="flex: 1; min-width: 0;">Note</a>
+                    <span class="text-small text-muted"
+                          th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
+                </div>
+            </div>
+            <div th:if="${#sets.isEmpty(item.notes)}"
+                 class="text-small text-muted" style="font-style: italic;">
+                No notes referenced yet.
+            </div>
+        </div>
+    </div>
+
     <!-- General Notes -->
     <div class="card" style="margin-bottom: 1.5rem;" th:if="${item.generalNotes != null}">
         <div class="card-body">

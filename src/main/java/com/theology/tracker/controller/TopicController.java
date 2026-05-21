@@ -1,8 +1,10 @@
 package com.theology.tracker.controller;
 
 import com.theology.tracker.dto.TopicFormDto;
+import com.theology.tracker.model.NoteParentType;
 import com.theology.tracker.model.Topic;
 import com.theology.tracker.model.TopicType;
+import com.theology.tracker.service.NoteService;
 import com.theology.tracker.service.TopicService;
 import com.theology.tracker.service.WorkItemService;
 import org.springframework.stereotype.Controller;
@@ -18,10 +20,12 @@ public class TopicController {
 
     private final TopicService topicService;
     private final WorkItemService workItemService;
+    private final NoteService noteService;
 
-    public TopicController(TopicService topicService, WorkItemService workItemService) {
+    public TopicController(TopicService topicService, WorkItemService workItemService, NoteService noteService) {
         this.topicService = topicService;
         this.workItemService = workItemService;
+        this.noteService = noteService;
     }
 
     @GetMapping
@@ -67,6 +71,7 @@ public class TopicController {
         model.addAttribute("topic", topic);
         model.addAttribute("rootTopics", rootTopics);
         model.addAttribute("ownedWorkItems", workItemService.findByOwningTopic(id));
+        model.addAttribute("notes", noteService.findByParent(NoteParentType.TOPIC, id));
         return "topics/show";
     }
 

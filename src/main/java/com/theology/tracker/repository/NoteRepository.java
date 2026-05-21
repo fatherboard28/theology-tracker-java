@@ -14,6 +14,8 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     List<Note> findByPrimaryParentTypeAndPrimaryParentIdOrderByUpdatedAtDesc(
         NoteParentType parentType, Long parentId);
 
+    List<Note> findAllByOrderByUpdatedAtDesc();
+
     @Query("SELECT n FROM Note n ORDER BY n.updatedAt DESC LIMIT 5")
     List<Note> findTop5ByOrderByUpdatedAtDesc();
 }

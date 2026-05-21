@@ -983,6 +983,63 @@ select.form-control {
     color: var(--gray-700);
 }
 
+/* ── Note Editor (split-pane) ─────────────────────────────────────────────── */
+.note-editor-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.note-editor-pane,
+.note-preview-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.note-editor-textarea {
+    resize: vertical;
+    min-height: 440px;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.65;
+}
+
+.note-editor-preview {
+    min-height: 440px;
+    overflow-y: auto;
+}
+
+/* ── Note Cards (listing) ─────────────────────────────────────────────────── */
+.note-list { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.note-card {
+    padding: var(--space-4) var(--space-5);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: white;
+    transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+.note-card:hover { border-color: #a5b4fc; box-shadow: var(--shadow-sm); }
+
+.note-card-title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--gray-900);
+    text-decoration: none;
+}
+.note-card-title:hover { color: var(--brand); text-decoration: none; }
+
+.note-preview {
+    color: var(--gray-500);
+    font-size: var(--text-sm);
+    margin-top: var(--space-1);
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
     .sidebar { transform: translateX(-100%); }
@@ -996,6 +1053,7 @@ select.form-control {
 @media (max-width: 768px) {
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
     .dashboard-columns { grid-template-columns: 1fr; }
+    .note-editor-layout { grid-template-columns: 1fr; }
     .main-content { padding: var(--space-5) var(--space-4) var(--space-12); }
     .topbar { padding: 0 var(--space-4); }
     .flash-container { padding: var(--space-3) var(--space-4) 0; }

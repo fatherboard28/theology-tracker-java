@@ -22,6 +22,9 @@ public interface WorkItemRepository extends JpaRepository<WorkItem, Long> {
 
     List<WorkItem> findByDueDateBeforeAndStatusNot(LocalDate date, WorkItemStatus status);
 
+    @Query("SELECT w FROM WorkItem w WHERE TYPE(w) IN (Assignment, Paper, PracticeSessionItem) ORDER BY w.title")
+    List<WorkItem> findReferenceableWorkItems();
+
     @Query("SELECT w FROM WorkItem w ORDER BY w.updatedAt DESC LIMIT 5")
     List<WorkItem> findTop5ByOrderByUpdatedAtDesc();
 

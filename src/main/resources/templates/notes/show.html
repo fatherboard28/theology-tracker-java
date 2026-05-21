@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title th:text="${note.title}">Note</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+            <a th:href="${parent.url()}" class="btn btn-secondary btn-sm">&larr; Back</a>
+        </div>
+        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+            <div style="flex: 1; min-width: 0;">
+                <h1 class="page-title" style="margin: 0;" th:text="${note.title}">Note Title</h1>
+                <p class="page-subtitle" style="margin-top: 0.25rem;">
+                    <span class="text-muted">In</span>
+                    <span th:text="${parent.type().name().replace('_', ' ')}">TYPE</span>
+                    &mdash;
+                    <a th:href="${parent.url()}" th:text="${parent.label()}">Parent</a>
+                    &nbsp;&mdash;&nbsp;
+                    <span class="text-muted">Modified</span>
+                    <span th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy h:mm a')}"></span>
+                </p>
+            </div>
+            <div class="d-flex gap-2" style="flex-shrink: 0;">
+                <a th:href="@{/notes/{id}/edit(id=${note.id})}" class="btn btn-primary btn-sm">Edit</a>
+                <form th:action="@{/notes/{id}/delete(id=${note.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            th:attr="data-confirm=${!note.workItemRefs.isEmpty()
+                                ? 'Delete note &quot;' + note.title + '&quot;? This will remove ' + note.workItemRefs.size() + ' work item reference(s).'
+                                : 'Delete note &quot;' + note.title + '&quot;?'}">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topic tags -->
+    <div style="margin-bottom: 1.5rem;" th:if="${!#sets.isEmpty(note.topicTags)}">
+        <div class="topic-tags-row">
+            <span th:each="topic : ${note.topicTags}" class="topic-tag">
+                <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
+            </span>
+        </div>
+    </div>
+
+    <!-- Note body — client-side markdown rendering -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-body">
+            <div id="note-body-raw" style="display:none;" th:text="${note.body}"></div>
+            <div id="note-body-rendered" class="markdown-preview"
+                 style="background:transparent; border:none; padding:0; min-height:60px;"></div>
+            <div th:if="${note.body == null or note.body.isBlank()}"
+                 class="text-muted text-small" style="font-style:italic;">
+                No content yet. <a th:href="@{/notes/{id}/edit(id=${note.id})}">Start writing</a>.
+            </div>
+        </div>
+    </div>
+
+    <!-- Referenced work items -->
+    <div class="section-header" style="margin-top: 2rem;">
+        <h2>Referenced Work Items</h2>
+    </div>
+
+    <div th:if="${!#sets.isEmpty(note.workItemRefs)}">
+        <div th:each="wi : ${note.workItemRefs}"
+             class="d-flex align-center gap-4"
+             style="padding: 0.6rem 0; border-bottom: 1px solid var(--gray-200); flex-wrap: wrap;">
+            <a th:href="@{/work-items/{id}(id=${wi.id})}"
+               th:text="${wi.title}" style="flex: 1; min-width: 0;">Work Item</a>
+            <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
+            <form th:action="@{/notes/{nid}/work-items/{wiid}/detach(nid=${note.id},wiid=${wi.id})}"
+                  method="post" style="display:inline; flex-shrink: 0;">
+                <button type="submit" class="btn btn-secondary btn-sm">Detach</button>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${#sets.isEmpty(note.workItemRefs)}"
+         class="text-small text-muted" style="font-style:italic; padding: 0.5rem 0;">
+        No work items referenced.
+    </div>
+
+    <!-- Attach work item -->
+    <div style="margin-top: 1rem;" th:if="${!#lists.isEmpty(availableWorkItems)}">
+        <form th:action="@{/notes/{id}/work-items/attach(id=${note.id})}" method="post"
+              class="d-flex gap-2" style="flex-wrap: wrap;">
+            <select name="workItemId" class="form-control" style="max-width: 420px; flex: 1;">
+                <option th:each="wi : ${availableWorkItems}"
+                        th:value="${wi.id}"
+                        th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
+            </select>
+            <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Attach</button>
+        </form>
+    </div>
+
+</div>
+<th:block layout:fragment="scripts">
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const raw = document.getElementById('note-body-raw');
+    const rendered = document.getElementById('note-body-rendered');
+    if (raw && rendered && typeof marked !== 'undefined') {
+        const body = raw.textContent;
+        if (body && body.trim()) {
+            rendered.innerHTML = marked.parse(body);
+        }
+    }
+});
+</script>
+</th:block>
+</body>
+</html>
