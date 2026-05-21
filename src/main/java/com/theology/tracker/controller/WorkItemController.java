@@ -3,6 +3,7 @@ package com.theology.tracker.controller;
 import com.theology.tracker.dto.WorkItemFormDto;
 import com.theology.tracker.model.*;
 import com.theology.tracker.service.MethodService;
+import com.theology.tracker.service.ProgressService;
 import com.theology.tracker.service.StudySessionService;
 import com.theology.tracker.service.TopicService;
 import com.theology.tracker.service.UnitService;
@@ -25,19 +26,22 @@ public class WorkItemController {
     private final UnitService unitService;
     private final MethodService methodService;
     private final StudySessionService sessionService;
+    private final ProgressService progressService;
 
     public WorkItemController(
         WorkItemService workItemService,
         TopicService topicService,
         UnitService unitService,
         MethodService methodService,
-        StudySessionService sessionService
+        StudySessionService sessionService,
+        ProgressService progressService
     ) {
         this.workItemService = workItemService;
         this.topicService = topicService;
         this.unitService = unitService;
         this.methodService = methodService;
         this.sessionService = sessionService;
+        this.progressService = progressService;
     }
 
     @GetMapping("/new")
@@ -112,6 +116,7 @@ public class WorkItemController {
         model.addAttribute("item", item);
         model.addAttribute("scriptureTags", workItemService.findScriptureTagsForWorkItem(id));
         model.addAttribute("sessions", sessionService.findByWorkItem(id));
+        model.addAttribute("totalLoggedMinutes", progressService.totalMinutesForWorkItem(id));
         model.addAttribute("backUrl", resolveBackUrl(item));
         model.addAttribute("typeLabel", formatTypeName(resolveType(item)));
         addTypedSubAttribute(model, item);

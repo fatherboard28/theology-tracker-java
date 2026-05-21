@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface StudySessionRepository extends JpaRepository<StudySession, Long> {
@@ -27,4 +28,19 @@ public interface StudySessionRepository extends JpaRepository<StudySession, Long
 
     @Query("SELECT DISTINCT s.sessionDate FROM StudySession s ORDER BY s.sessionDate DESC")
     List<LocalDate> findAllDistinctDatesOrderedDesc();
+
+    @Query("SELECT COALESCE(SUM(s.durationMinutes), 0) FROM StudySession s WHERE s.workItem.id = :workItemId")
+    int sumDurationByWorkItemId(@Param("workItemId") Long workItemId);
+
+    @Query("SELECT COALESCE(SUM(s.durationMinutes), 0) FROM StudySession s WHERE s.workItem.unit.id = :unitId")
+    int sumDurationByUnitId(@Param("unitId") Long unitId);
+
+    @Query("SELECT COALESCE(SUM(s.durationMinutes), 0) FROM StudySession s WHERE s.workItem.unit.course.id = :courseId")
+    int sumDurationByCourseId(@Param("courseId") Long courseId);
+
+    @Query("SELECT COALESCE(SUM(s.durationMinutes), 0) FROM StudySession s JOIN s.topics t WHERE t.id = :topicId")
+    int sumDurationByTopicId(@Param("topicId") Long topicId);
+
+    @Query("SELECT s FROM StudySession s ORDER BY s.sessionDate DESC LIMIT 1")
+    Optional<StudySession> findLastSession();
 }

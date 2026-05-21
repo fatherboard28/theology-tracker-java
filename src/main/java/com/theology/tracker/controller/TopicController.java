@@ -5,6 +5,7 @@ import com.theology.tracker.model.NoteParentType;
 import com.theology.tracker.model.Topic;
 import com.theology.tracker.model.TopicType;
 import com.theology.tracker.service.NoteService;
+import com.theology.tracker.service.ProgressService;
 import com.theology.tracker.service.StudySessionService;
 import com.theology.tracker.service.TopicService;
 import com.theology.tracker.service.WorkItemService;
@@ -23,12 +24,14 @@ public class TopicController {
     private final WorkItemService workItemService;
     private final NoteService noteService;
     private final StudySessionService sessionService;
+    private final ProgressService progressService;
 
-    public TopicController(TopicService topicService, WorkItemService workItemService, NoteService noteService, StudySessionService sessionService) {
+    public TopicController(TopicService topicService, WorkItemService workItemService, NoteService noteService, StudySessionService sessionService, ProgressService progressService) {
         this.topicService = topicService;
         this.workItemService = workItemService;
         this.noteService = noteService;
         this.sessionService = sessionService;
+        this.progressService = progressService;
     }
 
     @GetMapping
@@ -76,6 +79,7 @@ public class TopicController {
         model.addAttribute("ownedWorkItems", workItemService.findByOwningTopic(id));
         model.addAttribute("notes", noteService.findByParent(NoteParentType.TOPIC, id));
         model.addAttribute("sessions", sessionService.findByTopic(id));
+        model.addAttribute("totalLoggedMinutes", progressService.totalMinutesForTopic(id));
         return "topics/show";
     }
 

@@ -6,6 +6,7 @@ import com.theology.tracker.model.CourseStatus;
 import com.theology.tracker.model.NoteParentType;
 import com.theology.tracker.service.CourseService;
 import com.theology.tracker.service.NoteService;
+import com.theology.tracker.service.ProgressService;
 import com.theology.tracker.service.TopicService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -25,20 +26,27 @@ public class CourseController {
     private final CourseService courseService;
     private final TopicService topicService;
     private final NoteService noteService;
+    private final ProgressService progressService;
 
-    public CourseController(CourseService courseService, TopicService topicService, NoteService noteService) {
+    public CourseController(CourseService courseService, TopicService topicService, NoteService noteService, ProgressService progressService) {
         this.courseService = courseService;
         this.topicService = topicService;
         this.noteService = noteService;
+        this.progressService = progressService;
     }
 
     @GetMapping
     public String list(Model model) {
         List<Course> courses = courseService.findAll();
         Map<Long, Integer> progressMap = new LinkedHashMap<>();
-        courses.forEach(c -> progressMap.put(c.getId(), courseService.calculateProgress(c)));
+        Map<Long, Integer> loggedMinutesMap = new LinkedHashMap<>();
+        courses.forEach(c -> {
+            progressMap.put(c.getId(), courseService.calculateProgress(c));
+            loggedMinutesMap.put(c.getId(), progressService.totalMinutesForCourse(c.getId()));
+        });
         model.addAttribute("courses", courses);
         model.addAttribute("progressMap", progressMap);
+        model.addAttribute("loggedMinutesMap", loggedMinutesMap);
         return "courses/index";
     }
 
@@ -76,6 +84,7 @@ public class CourseController {
         model.addAttribute("units", course.getUnits());
         model.addAttribute("statuses", CourseStatus.values());
         model.addAttribute("notes", noteService.findByParent(NoteParentType.COURSE, id));
+        model.addAttribute("totalLoggedMinutes", progressService.totalMinutesForCourse(id));
         return "courses/show";
     }
 
