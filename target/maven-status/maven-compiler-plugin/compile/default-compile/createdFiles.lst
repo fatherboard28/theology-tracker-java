@@ -1,0 +1,6 @@
+com/theology/tracker/controller/DashboardController.class
+com/theology/tracker/config/DatabaseConfig.class
+com/theology/tracker/controller/GlobalExceptionHandler.class
+com/theology/tracker/controller/StubControllers.class
+com/theology/tracker/config/WebConfig.class
+com/theology/tracker/TheologyTrackerApplication.class

@@ -1,0 +1,52 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Theology Study Tracker — Docker Compose
+#
+# Usage:
+#   docker compose up --build          # first run; builds image
+#   docker compose up                  # subsequent runs (image already built)
+#   docker compose down                # stop and remove container
+#
+# Data persistence:
+#   The SQLite database lives at ./data/theology.db on the HOST machine.
+#   The ./data directory is bind-mounted into the container at /app/data.
+#   Copying ./data/theology.db is a complete backup of all application data.
+#   The database file is created automatically on first startup.
+#
+# Hot reload (development):
+#   In development, the Spring Boot DevTools dependency triggers class reload
+#   when compiled classes change. For full hot reload without manual rebuilds,
+#   run Maven in a separate terminal: mvn spring-boot:run
+#   (This does not require Docker.)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime        # builds the lean runtime stage only
+
+    container_name: theology-tracker
+
+    ports:
+      - "3000:8080"          # host port 3000 → container port 8080
+
+    volumes:
+      # Bind mount: ./data on host → /app/data in container
+      # The SQLite file (theology.db) lives here and persists outside the container.
+      - ./data:/app/data
+
+    environment:
+      - THEOLOGY_DB_PATH=/app/data/theology.db
+      - SPRING_PROFILES_ACTIVE=default
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/dashboard || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

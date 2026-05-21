@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title layout:title-pattern="$CONTENT_TITLE - Theology Tracker">Theology Tracker</title>
+
+    <!-- HTMX — HTML-over-the-wire partial updates -->
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+
+    <!-- Alpine.js — lightweight reactive sprinkles -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <!-- Sortable.js — drag-and-drop reordering for units -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
+
+    <!-- Marked.js — client-side markdown rendering for note previews -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+
+    <!-- Application stylesheet -->
+    <link rel="stylesheet" th:href="@{/static/css/main.css}"/>
+
+    <!-- Page-specific head content injected by child templates -->
+    <th:block layout:fragment="head"></th:block>
+</head>
+<body x-data="{ navOpen: false }">
+
+    <!-- ── Top Navigation Bar ───────────────────────────────────────────── -->
+    <header class="nav-header">
+        <div class="nav-container">
+            <a class="nav-brand" th:href="@{/dashboard}">
+                ✦ Theology Tracker
+            </a>
+
+            <!-- Hamburger for mobile -->
+            <button class="nav-toggle" @click="navOpen = !navOpen" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+
+            <nav class="nav-links" :class="{ open: navOpen }">
+                <a th:href="@{/dashboard}"
+                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/dashboard')} ? 'active'"
+                   class="nav-link">Dashboard</a>
+
+                <a th:href="@{/courses}"
+                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/courses')} ? 'active'"
+                   class="nav-link">Courses</a>
+
+                <a th:href="@{/topics}"
+                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/topics')} ? 'active'"
+                   class="nav-link">Topics</a>
+
+                <a th:href="@{/notes}"
+                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/notes')} ? 'active'"
+                   class="nav-link">Notes</a>
+
+                <a th:href="@{/sessions}"
+                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/sessions')} ? 'active'"
+                   class="nav-link">Sessions</a>
+
+                <a th:href="@{/methods}"
+                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/methods')} ? 'active'"
+                   class="nav-link">Methods</a>
+
+                <a th:href="@{/calendar}"
+                   th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/calendar')} ? 'active'"
+                   class="nav-link">Calendar</a>
+            </nav>
+
+            <!-- Global search -->
+            <form class="nav-search" th:action="@{/search}" method="get">
+                <input type="search" name="q" placeholder="Search…"
+                       th:value="${param.q}"
+                       class="nav-search-input"/>
+                <button type="submit" class="nav-search-btn" aria-label="Search">⌕</button>
+            </form>
+        </div>
+    </header>
+
+    <!-- ── Flash Messages ───────────────────────────────────────────────── -->
+    <div class="flash-container" th:if="${successMessage or errorMessage}">
+        <div class="flash flash-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+        <div class="flash flash-error"   th:if="${errorMessage}"   th:text="${errorMessage}"></div>
+    </div>
+
+    <!-- ── Main Content ─────────────────────────────────────────────────── -->
+    <main class="main-content" id="main-content">
+        <div layout:fragment="content">
+            <!-- Child templates inject their content here -->
+        </div>
+    </main>
+
+    <!-- ── Footer ───────────────────────────────────────────────────────── -->
+    <footer class="app-footer">
+        <span>Theology Study Tracker — local &amp; private</span>
+    </footer>
+
+    <!-- Page-specific scripts injected by child templates -->
+    <th:block layout:fragment="scripts"></th:block>
+</body>
+</html>
