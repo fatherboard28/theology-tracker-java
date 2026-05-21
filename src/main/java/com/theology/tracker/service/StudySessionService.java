@@ -19,19 +19,22 @@ public class StudySessionService {
     private final MethodRepository methodRepo;
     private final TopicRepository topicRepo;
     private final ScriptureTagRepository scriptureTagRepo;
+    private final ScriptureReferenceValidator scriptureValidator;
 
     public StudySessionService(
         StudySessionRepository sessionRepo,
         WorkItemRepository workItemRepo,
         MethodRepository methodRepo,
         TopicRepository topicRepo,
-        ScriptureTagRepository scriptureTagRepo
+        ScriptureTagRepository scriptureTagRepo,
+        ScriptureReferenceValidator scriptureValidator
     ) {
         this.sessionRepo = sessionRepo;
         this.workItemRepo = workItemRepo;
         this.methodRepo = methodRepo;
         this.topicRepo = topicRepo;
         this.scriptureTagRepo = scriptureTagRepo;
+        this.scriptureValidator = scriptureValidator;
     }
 
     public List<StudySession> findAll() {
@@ -130,6 +133,7 @@ public class StudySessionService {
         for (String ref : refs) {
             String trimmed = ref.trim();
             if (trimmed.isBlank()) continue;
+            scriptureValidator.validate(trimmed);
             ScriptureTag tag = new ScriptureTag();
             tag.setReference(trimmed);
             tag.setEntityType(ScriptureEntityType.SESSION);

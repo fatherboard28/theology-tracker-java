@@ -25,6 +25,7 @@ public class WorkItemService {
     private final MethodRepository methodRepo;
     private final ScriptureTagRepository scriptureTagRepo;
     private final UnitService unitService;
+    private final ScriptureReferenceValidator scriptureValidator;
 
     public WorkItemService(
         WorkItemRepository workItemRepo,
@@ -36,7 +37,8 @@ public class WorkItemService {
         TopicRepository topicRepo,
         MethodRepository methodRepo,
         ScriptureTagRepository scriptureTagRepo,
-        UnitService unitService
+        UnitService unitService,
+        ScriptureReferenceValidator scriptureValidator
     ) {
         this.workItemRepo = workItemRepo;
         this.readingRepo = readingRepo;
@@ -48,6 +50,7 @@ public class WorkItemService {
         this.methodRepo = methodRepo;
         this.scriptureTagRepo = scriptureTagRepo;
         this.unitService = unitService;
+        this.scriptureValidator = scriptureValidator;
     }
 
     @Transactional(readOnly = true)
@@ -243,6 +246,7 @@ public class WorkItemService {
         for (String ref : refs) {
             String trimmed = ref.trim();
             if (trimmed.isBlank()) continue;
+            scriptureValidator.validate(trimmed);
             ScriptureTag tag = new ScriptureTag();
             tag.setReference(trimmed);
             tag.setEntityType(ScriptureEntityType.WORK_ITEM);

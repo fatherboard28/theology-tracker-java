@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title>Scripture Reference View</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <h1 class="page-title">Scripture Reference View</h1>
+        <p class="page-subtitle text-muted text-small">
+            Browse all entities tagged with a given scripture reference or chapter range.
+        </p>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card" style="max-width: 560px; margin-bottom: 2rem;">
+        <div class="card-body">
+            <form th:action="@{/scripture}" method="get" class="d-flex gap-4 align-center">
+                <div style="flex: 1;">
+                    <input type="text" name="ref" id="refInput"
+                           class="form-control scripture-ref-input"
+                           th:value="${query}"
+                           placeholder="e.g. Rom 8 or Rom 8:28 or Gen 1:1"
+                           autocomplete="off"
+                           autofocus/>
+                    <div class="form-hint" style="margin-top: 0.35rem;">
+                        Enter a book + chapter for all verses (e.g. <code>Rom 8</code>),
+                        or book + chapter:verse for an exact match (e.g. <code>Rom 8:28</code>).
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="flex-shrink: 0;">Browse</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div th:if="${result != null}">
+
+        <div class="section-header" style="margin-bottom: 1rem;">
+            <h2 style="font-size: 1.1rem;">
+                Results for <code th:text="${result.query}"></code>
+            </h2>
+        </div>
+
+        <div th:if="${result.workItems.isEmpty() and result.sessions.isEmpty()}"
+             class="empty-state" style="padding: 2rem 0;">
+            <p>No entities are tagged with <strong th:text="${result.query}"></strong>.</p>
+        </div>
+
+        <!-- Work Items -->
+        <div th:if="${!result.workItems.isEmpty()}" style="margin-bottom: 2rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+                Work Items
+                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.workItems.size()}"></span>
+            </h3>
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <div th:each="item, stat : ${result.workItems}"
+                         class="d-flex align-center gap-4"
+                         style="padding: 0.75rem 1rem;"
+                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
+                        <div style="flex: 1; min-width: 0;">
+                            <a th:href="@{/work-items/{id}(id=${item.id})}"
+                               th:text="${item.title}"
+                               style="font-weight: 500;">Work Item</a>
+                            <div class="text-small text-muted" style="margin-top: 0.15rem;">
+                                <span th:if="${item.unit != null}"
+                                      th:text="${item.unit.course.title + ' › ' + item.unit.title}"></span>
+                                <span th:if="${item.owningTopic != null and item.unit == null}"
+                                      th:text="'Topic: ' + ${item.owningTopic.title}"></span>
+                            </div>
+                        </div>
+                        <span class="badge"
+                              th:classappend="${item.status.name() == 'COMPLETE' ? 'badge-complete' : (item.status.name() == 'IN_PROGRESS' ? 'badge-active' : '')}"
+                              th:text="${item.status.name().replace('_', ' ')}">
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Study Sessions -->
+        <div th:if="${!result.sessions.isEmpty()}" style="margin-bottom: 2rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+                Study Sessions
+                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.sessions.size()}"></span>
+            </h3>
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <div th:each="s, stat : ${result.sessions}"
+                         class="d-flex align-center gap-4"
+                         style="padding: 0.75rem 1rem;"
+                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
+                        <div style="flex: 1; min-width: 0;">
+                            <a th:href="@{/sessions/{id}(id=${s.id})}"
+                               th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}"
+                               style="font-weight: 500;">Session</a>
+                            <div class="text-small text-muted" style="margin-top: 0.15rem;">
+                                <span th:text="${s.durationMinutes + ' min'}"></span>
+                                <span th:if="${s.workItem != null}"
+                                      th:text="' · ' + ${s.workItem.title}"></span>
+                                <span th:if="${s.reflectionNote != null and !s.reflectionNote.isBlank()}"
+                                      th:text="' · ' + ${#strings.abbreviate(s.reflectionNote, 60)}"></span>
+                            </div>
+                        </div>
+                        <a th:href="@{/sessions/{id}(id=${s.id})}"
+                           class="btn btn-secondary btn-sm">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Book Reference Guide -->
+    <div th:if="${result == null}" style="margin-top: 1.5rem;">
+        <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-muted);">
+            Supported Book Abbreviations
+        </h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+            <code th:each="abbr : ${bookAbbreviations}"
+                  style="font-size: 0.78rem; padding: 0.15rem 0.4rem; background: var(--gray-100); border-radius: 3px;"
+                  th:text="${abbr}">
+            </code>
+        </div>
+    </div>
+
+</div>
+<th:block layout:fragment="scripts">
+<script>
+// Inline validation for the search input
+document.getElementById('refInput')?.addEventListener('blur', function() {
+    validateScriptureRef(this);
+});
+</script>
+</th:block>
+</body>
+</html>
