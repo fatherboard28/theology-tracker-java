@@ -76,20 +76,22 @@
         </div>
 
         <div th:if="${!#lists.isEmpty(sessions)}">
-            <div th:each="session : ${sessions}"
+            <div th:each="s : ${sessions}"
                  class="d-flex align-center gap-4"
                  style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
                 <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
-                      th:text="${#temporals.format(session.sessionDate, 'MMM d, yyyy')}">Date</span>
+                      th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}">Date</span>
                 <span class="text-small text-muted" style="flex-shrink: 0;"
-                      th:text="${session.durationMinutes} + ' min'">0 min</span>
+                      th:text="${s.durationMinutes} + ' min'">0 min</span>
                 <span class="text-small text-muted" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
-                      th:if="${session.workItem != null}"
-                      th:text="${session.workItem.title}"></span>
+                      th:if="${s.workItem != null}"
+                      th:text="${s.workItem.title}"></span>
                 <span class="text-small text-muted" style="flex: 1;"
-                      th:if="${session.workItem == null}">Free-form session</span>
-                <span class="text-small text-muted" th:if="${session.reflectionNote != null and !session.reflectionNote.isBlank()}"
-                      th:text="${#strings.abbreviate(session.reflectionNote, 80)}"></span>
+                      th:if="${s.workItem == null}">Free-form session</span>
+                <span class="text-small text-muted" th:if="${s.reflectionNote != null and !s.reflectionNote.isBlank()}"
+                      th:text="${#strings.abbreviate(s.reflectionNote, 80)}"></span>
+                <a th:href="@{/sessions/{id}(id=${s.id})}"
+                   class="btn btn-secondary btn-sm" style="flex-shrink: 0;">View</a>
             </div>
         </div>
     </div>

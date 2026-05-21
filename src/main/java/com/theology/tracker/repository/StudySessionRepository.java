@@ -12,11 +12,15 @@ import java.util.List;
 @Repository
 public interface StudySessionRepository extends JpaRepository<StudySession, Long> {
 
+    List<StudySession> findAllByOrderBySessionDateDesc();
+
     List<StudySession> findBySessionDateBetweenOrderBySessionDateDesc(LocalDate from, LocalDate to);
 
     List<StudySession> findByWorkItemIdOrderBySessionDateDesc(Long workItemId);
 
     List<StudySession> findByMethodIdOrderBySessionDateDesc(Long methodId);
+
+    List<StudySession> findByTopics_IdOrderBySessionDateDesc(Long topicId);
 
     @Query("SELECT SUM(s.durationMinutes) FROM StudySession s WHERE s.sessionDate BETWEEN :from AND :to")
     Integer sumDurationBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);

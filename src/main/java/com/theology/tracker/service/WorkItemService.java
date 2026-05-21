@@ -51,6 +51,11 @@ public class WorkItemService {
     }
 
     @Transactional(readOnly = true)
+    public List<WorkItem> findAll() {
+        return workItemRepo.findAllByOrderByTitleAsc();
+    }
+
+    @Transactional(readOnly = true)
     public WorkItem findById(Long id) {
         return workItemRepo.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Work item not found: " + id));

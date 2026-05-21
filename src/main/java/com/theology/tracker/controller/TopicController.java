@@ -5,6 +5,7 @@ import com.theology.tracker.model.NoteParentType;
 import com.theology.tracker.model.Topic;
 import com.theology.tracker.model.TopicType;
 import com.theology.tracker.service.NoteService;
+import com.theology.tracker.service.StudySessionService;
 import com.theology.tracker.service.TopicService;
 import com.theology.tracker.service.WorkItemService;
 import org.springframework.stereotype.Controller;
@@ -21,11 +22,13 @@ public class TopicController {
     private final TopicService topicService;
     private final WorkItemService workItemService;
     private final NoteService noteService;
+    private final StudySessionService sessionService;
 
-    public TopicController(TopicService topicService, WorkItemService workItemService, NoteService noteService) {
+    public TopicController(TopicService topicService, WorkItemService workItemService, NoteService noteService, StudySessionService sessionService) {
         this.topicService = topicService;
         this.workItemService = workItemService;
         this.noteService = noteService;
+        this.sessionService = sessionService;
     }
 
     @GetMapping
@@ -72,6 +75,7 @@ public class TopicController {
         model.addAttribute("rootTopics", rootTopics);
         model.addAttribute("ownedWorkItems", workItemService.findByOwningTopic(id));
         model.addAttribute("notes", noteService.findByParent(NoteParentType.TOPIC, id));
+        model.addAttribute("sessions", sessionService.findByTopic(id));
         return "topics/show";
     }
 

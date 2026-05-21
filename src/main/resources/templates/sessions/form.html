@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title th:text="${pageTitle}">Session</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+            <a th:href="@{/sessions}" class="btn btn-secondary btn-sm">&larr; Sessions</a>
+        </div>
+        <h1 class="page-title" th:text="${pageTitle}">Log Study Session</h1>
+    </div>
+
+    <div class="card" style="max-width: 720px;">
+        <div class="card-body">
+            <form th:action="${formAction}" method="post">
+
+                <input th:if="${param.returnUrl != null}"
+                       type="hidden" name="returnUrl" th:value="${param.returnUrl}"/>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label required" for="sessionDate">Date</label>
+                        <input type="date" id="sessionDate" name="sessionDate" class="form-control" required
+                               th:value="${session != null and session.sessionDate != null ? session.sessionDate : #temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required" for="durationMinutes">Duration (minutes)</label>
+                        <input type="number" id="durationMinutes" name="durationMinutes" class="form-control"
+                               min="1" required
+                               th:value="${session != null ? session.durationMinutes : ''}"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="workItemId">Work Item (optional)</label>
+                    <select id="workItemId" name="workItemId" class="form-control">
+                        <option value="">— Free-form session (no work item) —</option>
+                        <option th:each="wi : ${allWorkItems}"
+                                th:value="${wi.id}"
+                                th:text="${wi.title}"
+                                th:selected="${session != null and session.workItem != null and session.workItem.id == wi.id
+                                              or (preWorkItemId != null and preWorkItemId == wi.id)}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="methodId">Method (optional)</label>
+                    <select id="methodId" name="methodId" class="form-control">
+                        <option value="">— None —</option>
+                        <option th:each="m : ${allMethods}"
+                                th:value="${m.id}"
+                                th:text="${m.name}"
+                                th:selected="${session != null and session.method != null and session.method.id == m.id
+                                              or (preMethodId != null and preMethodId == m.id)}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reflectionNote">Reflection (optional)</label>
+                    <textarea id="reflectionNote" name="reflectionNote" class="form-control" rows="4"
+                              placeholder="What did you learn or observe during this session?"
+                              th:text="${session != null ? session.reflectionNote : ''}"></textarea>
+                </div>
+
+                <!-- Topic Tags -->
+                <div th:replace="~{topics/tag-select-fragment :: topicMultiSelect(${allTopics}, ${session != null and !#sets.isEmpty(session.topics) ? session.topics.![id] : (preTopicId != null ? #arrays.asList(preTopicId) : null)})}"></div>
+
+                <!-- Scripture Tags -->
+                <div class="form-group">
+                    <label class="form-label">Scripture Tags (optional)</label>
+                    <div id="scripture-tags-container">
+                        <div th:if="${scriptureTags != null and !scriptureTags.isEmpty()}">
+                            <div th:each="tag : ${scriptureTags}" class="d-flex gap-2" style="margin-bottom: 0.5rem;">
+                                <input type="text" name="scriptureTags" class="form-control"
+                                       th:value="${tag.reference}"
+                                       placeholder="e.g. Rom 8:28"/>
+                            </div>
+                        </div>
+                        <div th:if="${scriptureTags == null or scriptureTags.isEmpty()}">
+                            <input type="text" name="scriptureTags" class="form-control"
+                                   placeholder="e.g. Rom 8:28" style="margin-bottom: 0.5rem;"/>
+                        </div>
+                    </div>
+                    <div class="form-hint">Format: <code>AAA C:V</code> e.g. <code>Rom 8:28</code></div>
+                    <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem;"
+                            onclick="addScriptureTag()">+ Add Scripture Tag</button>
+                </div>
+
+                <div class="d-flex gap-4" style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" th:text="${pageTitle}">Save</button>
+                    <a th:href="@{/sessions}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+<th:block layout:fragment="scripts">
+<script>
+function addScriptureTag() {
+    const container = document.getElementById('scripture-tags-container');
+    const div = document.createElement('div');
+    div.className = 'd-flex gap-2';
+    div.style.marginBottom = '0.5rem';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'scriptureTags';
+    input.className = 'form-control';
+    input.placeholder = 'e.g. Gen 1:1';
+    div.appendChild(input);
+    container.appendChild(div);
+    input.focus();
+}
+</script>
+</th:block>
+</body>
+</html>

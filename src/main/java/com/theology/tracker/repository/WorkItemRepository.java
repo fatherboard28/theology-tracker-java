@@ -12,6 +12,8 @@ import java.util.List;
 @Repository
 public interface WorkItemRepository extends JpaRepository<WorkItem, Long> {
 
+    List<WorkItem> findAllByOrderByTitleAsc();
+
     List<WorkItem> findByUnitId(Long unitId);
 
     List<WorkItem> findByOwningTopicId(Long topicId);
