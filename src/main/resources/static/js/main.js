@@ -11,6 +11,28 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ── Mobile sidebar toggle ──────────────────────────────────────────────
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('sidebar-overlay');
+    const openBtn  = document.getElementById('sidebar-open');
+    const closeBtn = document.getElementById('sidebar-close');
+
+    function openSidebar() {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    openBtn?.addEventListener('click', openSidebar);
+    closeBtn?.addEventListener('click', closeSidebar);
+    overlay?.addEventListener('click', closeSidebar);
+
     // ── HTMX configuration ─────────────────────────────────────────────────
     if (typeof htmx !== 'undefined') {
         htmx.config.defaultSwapStyle = 'outerHTML';
