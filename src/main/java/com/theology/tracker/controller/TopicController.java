@@ -4,6 +4,7 @@ import com.theology.tracker.dto.TopicFormDto;
 import com.theology.tracker.model.Topic;
 import com.theology.tracker.model.TopicType;
 import com.theology.tracker.service.TopicService;
+import com.theology.tracker.service.WorkItemService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +17,11 @@ import java.util.List;
 public class TopicController {
 
     private final TopicService topicService;
+    private final WorkItemService workItemService;
 
-    public TopicController(TopicService topicService) {
+    public TopicController(TopicService topicService, WorkItemService workItemService) {
         this.topicService = topicService;
+        this.workItemService = workItemService;
     }
 
     @GetMapping
@@ -63,6 +66,7 @@ public class TopicController {
             .toList();
         model.addAttribute("topic", topic);
         model.addAttribute("rootTopics", rootTopics);
+        model.addAttribute("ownedWorkItems", workItemService.findByOwningTopic(id));
         return "topics/show";
     }
 

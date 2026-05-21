@@ -106,10 +106,59 @@
         </div>
     </div>
 
-    <!-- Placeholder for future Topic View sections (Phase 13) -->
+    <!-- Owned Work Items -->
+    <div style="margin-top: 2rem;">
+        <div class="section-header">
+            <h2>Owned Work Items</h2>
+            <div x-data="{ open: false }" style="position: relative;">
+                <button @click="open = !open" type="button" class="btn btn-primary btn-sm">+ Add Work Item</button>
+                <div x-show="open" x-cloak
+                     style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
+                            background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+                            padding: 0.5rem; min-width: 180px; z-index: 10;">
+                    <a th:href="@{/work-items/new(type='READING',owningTopicId=${topic.id})}"
+                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Reading</a>
+                    <a th:href="@{/work-items/new(type='ASSIGNMENT',owningTopicId=${topic.id})}"
+                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Assignment</a>
+                    <a th:href="@{/work-items/new(type='PAPER',owningTopicId=${topic.id})}"
+                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Paper</a>
+                    <a th:href="@{/work-items/new(type='PRACTICE_SESSION',owningTopicId=${topic.id})}"
+                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Practice Session</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(ownedWorkItems)}">
+            <p>No owned work items yet. Use the button above to create one directly under this topic.</p>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(ownedWorkItems)}">
+            <div th:each="wi : ${ownedWorkItems}"
+                 class="d-flex align-center gap-4"
+                 style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <form th:action="@{/work-items/{id}/complete(id=${wi.id})}" method="post" style="display:inline; flex-shrink: 0;">
+                    <input type="hidden" name="returnUrl" th:value="@{/topics/{id}(id=${topic.id})}"/>
+                    <button type="submit"
+                            th:title="${wi.status.name() == 'COMPLETE' ? 'Mark incomplete' : 'Mark complete'}"
+                            style="background: none; border: none; cursor: pointer; padding: 0; font-size: 1rem; line-height: 1;"
+                            th:text="${wi.status.name() == 'COMPLETE' ? '✓' : '○'}">○</button>
+                </form>
+                <a th:href="@{/work-items/{id}(id=${wi.id})}"
+                   th:text="${wi.title}"
+                   th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-muted); flex: 1;' : 'flex: 1;'}">Work Item</a>
+                <span class="badge text-small"
+                      th:text="${wi.typeLabel}">Type</span>
+                <span class="text-small text-muted" th:if="${wi.dueDate != null}"
+                      th:text="'Due ' + ${#temporals.format(wi.dueDate, 'MMM d')}"></span>
+                <a th:href="@{/work-items/{id}/edit(id=${wi.id})}" class="btn btn-secondary btn-sm">Edit</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholder for remaining Topic View sections (Phase 13) -->
     <div style="margin-top: 2rem;">
         <p class="text-muted text-small" style="font-style: italic;">
-            Owned work items, tagged courses, units, notes, and sessions will appear here in a future phase.
+            Tagged courses, units, notes, and sessions will appear here in a future phase.
         </p>
     </div>
 

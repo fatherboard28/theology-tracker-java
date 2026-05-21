@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title th:text="${pageTitle}">Work Item</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+            <a th:href="${backUrl}" class="btn btn-secondary btn-sm">&larr; Back</a>
+        </div>
+        <h1 class="page-title" th:text="${pageTitle}">Work Item</h1>
+    </div>
+
+    <div class="card" style="max-width: 720px;">
+        <div class="card-body">
+            <form th:action="${formAction}" method="post">
+
+                <!-- Hidden type/parent fields -->
+                <input type="hidden" name="type" th:value="${formType.name()}"/>
+                <input type="hidden" th:if="${unitId != null}" name="unitId" th:value="${unitId}"/>
+                <input type="hidden" th:if="${item != null and item.unit != null}" name="unitId" th:value="${item.unit.id}"/>
+                <input type="hidden" th:if="${owningTopicId != null}" name="owningTopicId" th:value="${owningTopicId}"/>
+                <input type="hidden" th:if="${item != null and item.owningTopic != null}" name="owningTopicId" th:value="${item.owningTopic.id}"/>
+
+                <!-- Context labels -->
+                <div class="form-group" th:if="${unit != null or (item != null and item.unit != null)}">
+                    <label class="form-label">Unit</label>
+                    <div class="text-small text-muted" th:if="${unit != null}">
+                        <strong th:text="${unit.title}"></strong>
+                        &mdash; <span th:text="${unit.course.title}"></span>
+                    </div>
+                    <div class="text-small text-muted" th:if="${item != null and item.unit != null}">
+                        <strong th:text="${item.unit.title}"></strong>
+                        &mdash; <span th:text="${item.unit.course.title}"></span>
+                    </div>
+                </div>
+
+                <div class="form-group" th:if="${owningTopic != null or (item != null and item.owningTopic != null)}">
+                    <label class="form-label">Owning Topic</label>
+                    <div class="text-small text-muted"
+                         th:text="${owningTopic != null ? owningTopic.title : item.owningTopic.title}"></div>
+                </div>
+
+                <!-- Common fields -->
+                <div class="form-group">
+                    <label class="form-label required" for="title">Title</label>
+                    <input type="text" id="title" name="title" class="form-control"
+                           th:value="${item != null ? item.title : ''}"
+                           placeholder="Short descriptive title" required autofocus/>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="status">Status</label>
+                        <select id="status" name="status" class="form-control">
+                            <option th:each="s : ${statuses}"
+                                    th:value="${s.name()}"
+                                    th:text="${s.name().replace('_', ' ')}"
+                                    th:selected="${item != null and item.status == s}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="estimatedDuration">Estimated Duration (min)</label>
+                        <input type="number" id="estimatedDuration" name="estimatedDuration"
+                               class="form-control" min="1"
+                               th:value="${item != null ? item.estimatedDuration : ''}"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="dueDate">Due Date</label>
+                    <input type="date" id="dueDate" name="dueDate" class="form-control"
+                           th:value="${item != null ? item.dueDate : ''}"/>
+                </div>
+
+                <!-- Reading-specific -->
+                <div th:if="${formType.name() == 'READING'}">
+                    <hr style="margin: 1.25rem 0;"/>
+                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Reading Details</h3>
+
+                    <div class="form-group">
+                        <label class="form-label required" for="source">Source</label>
+                        <input type="text" id="source" name="source" class="form-control"
+                               th:value="${reading != null ? reading.source : ''}"
+                               placeholder="Book title, article name, or &quot;Scripture&quot;" required/>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="author">Author</label>
+                            <input type="text" id="author" name="author" class="form-control"
+                                   th:value="${reading != null ? reading.author : ''}"/>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="format">Format</label>
+                            <select id="format" name="format" class="form-control">
+                                <option th:each="f : ${readingFormats}"
+                                        th:value="${f.name()}"
+                                        th:text="${f.name().replace('_', ' ')}"
+                                        th:selected="${reading != null and reading.format == f}">
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="location">Location</label>
+                        <input type="text" id="location" name="location" class="form-control"
+                               th:value="${reading != null ? reading.location : ''}"
+                               placeholder="Page range or scripture reference"/>
+                    </div>
+                </div>
+
+                <!-- Assignment-specific -->
+                <div th:if="${formType.name() == 'ASSIGNMENT'}">
+                    <hr style="margin: 1.25rem 0;"/>
+                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Assignment Details</h3>
+
+                    <div class="form-group">
+                        <label class="form-label" for="description">Description</label>
+                        <textarea id="description" name="description" class="form-control" rows="4"
+                                  placeholder="What this assignment requires..."
+                                  th:text="${assignment != null ? assignment.description : ''}"></textarea>
+                    </div>
+                </div>
+
+                <!-- Paper-specific -->
+                <div th:if="${formType.name() == 'PAPER'}">
+                    <hr style="margin: 1.25rem 0;"/>
+                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Paper Details</h3>
+
+                    <div class="form-group">
+                        <label class="form-label" for="promptOrTopic">Prompt or Topic</label>
+                        <textarea id="promptOrTopic" name="promptOrTopic" class="form-control" rows="3"
+                                  placeholder="The question or subject being addressed..."
+                                  th:text="${paper != null ? paper.promptOrTopic : ''}"></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="wordCountTarget">Word Count Target</label>
+                            <input type="number" id="wordCountTarget" name="wordCountTarget"
+                                   class="form-control" min="1"
+                                   th:value="${paper != null ? paper.wordCountTarget : ''}"/>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="scoreOrGrade">Score / Grade</label>
+                            <input type="text" id="scoreOrGrade" name="scoreOrGrade" class="form-control"
+                                   th:value="${paper != null ? paper.scoreOrGrade : ''}"
+                                   placeholder="e.g. A, 92%, Excellent"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Practice Session-specific -->
+                <div th:if="${formType.name() == 'PRACTICE_SESSION'}">
+                    <hr style="margin: 1.25rem 0;"/>
+                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Practice Session Details</h3>
+
+                    <div class="form-group">
+                        <label class="form-label" for="methodId">Method</label>
+                        <select id="methodId" name="methodId" class="form-control">
+                            <option value="">— None —</option>
+                            <option th:each="m : ${allMethods}"
+                                    th:value="${m.id}"
+                                    th:text="${m.name}"
+                                    th:selected="${practiceSession != null and practiceSession.method != null and practiceSession.method.id == m.id}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="scripturePassage">Scripture Passage</label>
+                            <input type="text" id="scripturePassage" name="scripturePassage"
+                                   class="form-control"
+                                   th:value="${practiceSession != null ? practiceSession.scripturePassage : ''}"
+                                   placeholder="e.g. Rom 8:1-17"/>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="durationMinutes">Duration (min)</label>
+                            <input type="number" id="durationMinutes" name="durationMinutes"
+                                   class="form-control" min="1"
+                                   th:value="${practiceSession != null ? practiceSession.durationMinutes : ''}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General Notes -->
+                <div class="form-group" style="margin-top: 1.25rem;">
+                    <label class="form-label" for="generalNotes">General Notes</label>
+                    <textarea id="generalNotes" name="generalNotes" class="form-control" rows="3"
+                              placeholder="Brief annotations or reminders..."
+                              th:text="${item != null ? item.generalNotes : ''}"></textarea>
+                </div>
+
+                <!-- Topic Tags -->
+                <div th:replace="~{topics/tag-select-fragment :: topicMultiSelect(${allTopics}, ${item != null ? item.topicTags.![id] : null})}"></div>
+
+                <!-- Scripture Tags -->
+                <div class="form-group">
+                    <label class="form-label">Scripture Tags</label>
+                    <div id="scripture-tags-container">
+                        <div th:if="${scriptureTags != null and !scriptureTags.isEmpty()}">
+                            <div th:each="tag : ${scriptureTags}" class="d-flex gap-2" style="margin-bottom: 0.5rem;">
+                                <input type="text" name="scriptureTags" class="form-control"
+                                       th:value="${tag.reference}"
+                                       placeholder="e.g. Rom 8:28"/>
+                            </div>
+                        </div>
+                        <div th:if="${scriptureTags == null or scriptureTags.isEmpty()}">
+                            <input type="text" name="scriptureTags" class="form-control"
+                                   placeholder="e.g. Rom 8:28" style="margin-bottom: 0.5rem;"/>
+                        </div>
+                    </div>
+                    <div class="form-hint">Format: <code>AAA C:V</code> e.g. <code>Rom 8:28</code></div>
+                    <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem;"
+                            onclick="addScriptureTag()">+ Add Scripture Tag</button>
+                </div>
+
+                <div class="d-flex gap-4" style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" th:text="${pageTitle}">Save</button>
+                    <a th:href="${backUrl}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+<th:block layout:fragment="scripts">
+<script>
+function addScriptureTag() {
+    const container = document.getElementById('scripture-tags-container');
+    const div = document.createElement('div');
+    div.className = 'd-flex gap-2';
+    div.style.marginBottom = '0.5rem';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'scriptureTags';
+    input.className = 'form-control';
+    input.placeholder = 'e.g. Gen 1:1';
+    div.appendChild(input);
+    container.appendChild(div);
+    input.focus();
+}
+</script>
+</th:block>
+</body>
+</html>

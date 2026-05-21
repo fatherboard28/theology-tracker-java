@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title th:text="${item.title}">Work Item</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+            <a th:href="${backUrl}" class="btn btn-secondary btn-sm">&larr; Back</a>
+        </div>
+        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+            <div style="flex: 1; min-width: 0;">
+                <div class="d-flex align-center gap-4" style="margin-bottom: 0.5rem; flex-wrap: wrap;">
+                    <h1 class="page-title" style="margin: 0;" th:text="${item.title}">Work Item</h1>
+                    <span class="badge" th:text="${typeLabel}">READING</span>
+                    <span class="badge"
+                          th:classappend="${item.status.name() == 'COMPLETE' ? 'badge-complete' : (item.status.name() == 'IN_PROGRESS' ? 'badge-active' : '')}"
+                          th:text="${item.status.name().replace('_', ' ')}">NOT STARTED</span>
+                </div>
+                <p class="page-subtitle text-muted text-small" th:if="${item.unit != null}">
+                    In <a th:href="@{/courses/{id}(id=${item.unit.course.id})}"
+                          th:text="${item.unit.course.title}">Course</a>
+                    &rsaquo; <span th:text="${item.unit.title}">Unit</span>
+                </p>
+                <p class="page-subtitle text-muted text-small" th:if="${item.owningTopic != null}">
+                    Owned by <a th:href="@{/topics/{id}(id=${item.owningTopic.id})}"
+                                th:text="${item.owningTopic.title}">Topic</a>
+                </p>
+            </div>
+            <div class="d-flex gap-2" style="flex-shrink: 0;">
+                <a th:href="@{/work-items/{id}/edit(id=${item.id})}" class="btn btn-secondary btn-sm">Edit</a>
+                <form th:action="@{/work-items/{id}/delete(id=${item.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            th:attr="data-confirm='Delete &quot;' + ${item.title} + '&quot;?'">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion toggle & meta -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; align-items: start;">
+                <div>
+                    <div class="form-label" style="margin-bottom: 0.5rem;">Completion</div>
+                    <form th:action="@{/work-items/{id}/complete(id=${item.id})}" method="post">
+                        <input type="hidden" name="returnUrl" th:value="@{/work-items/{id}(id=${item.id})}"/>
+                        <button type="submit"
+                                th:class="${item.status.name() == 'COMPLETE' ? 'btn btn-secondary btn-sm' : 'btn btn-primary btn-sm'}"
+                                th:text="${item.status.name() == 'COMPLETE' ? '✓ Mark Incomplete' : '○ Mark Complete'}">
+                            Mark Complete
+                        </button>
+                    </form>
+                    <div class="text-small text-muted" style="margin-top: 0.5rem;"
+                         th:if="${item.completionDate != null}">
+                        Completed <span th:text="${#temporals.format(item.completionDate, 'MMM d, yyyy')}"></span>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-label" style="margin-bottom: 0.5rem;">Schedule</div>
+                    <div class="text-small" style="line-height: 1.8;">
+                        <span class="text-muted">Est. duration:</span>
+                        <span th:text="${item.estimatedDuration != null ? item.estimatedDuration + ' min' : '—'}"></span><br/>
+                        <span class="text-muted">Due:</span>
+                        <span th:text="${item.dueDate != null ? #temporals.format(item.dueDate, 'MMM d, yyyy') : '—'}"></span>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-label" style="margin-bottom: 0.5rem;">Topic Tags</div>
+                    <div th:if="${!#sets.isEmpty(item.topicTags)}" class="topic-tags-row">
+                        <span th:each="topic : ${item.topicTags}" class="topic-tag topic-tag-sm">
+                            <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
+                        </span>
+                    </div>
+                    <div th:if="${#sets.isEmpty(item.topicTags)}" class="text-small text-muted">None</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Type-specific details -->
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${reading != null}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Reading Details</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <div class="form-label text-muted">Source</div>
+                    <div th:text="${reading.source}">—</div>
+                </div>
+                <div>
+                    <div class="form-label text-muted">Author</div>
+                    <div th:text="${reading.author != null ? reading.author : '—'}">—</div>
+                </div>
+                <div>
+                    <div class="form-label text-muted">Format</div>
+                    <div th:text="${reading.format.name().replace('_', ' ')}">—</div>
+                </div>
+                <div>
+                    <div class="form-label text-muted">Location</div>
+                    <div th:text="${reading.location != null ? reading.location : '—'}">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${assignment != null}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Assignment Details</h2>
+            <div th:if="${assignment.description != null}" th:text="${assignment.description}"></div>
+            <div th:if="${assignment.description == null}" class="text-muted text-small">No description.</div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${paper != null}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Paper Details</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="grid-column: 1 / -1;" th:if="${paper.promptOrTopic != null}">
+                    <div class="form-label text-muted">Prompt / Topic</div>
+                    <div th:text="${paper.promptOrTopic}"></div>
+                </div>
+                <div>
+                    <div class="form-label text-muted">Word Count Target</div>
+                    <div th:text="${paper.wordCountTarget != null ? paper.wordCountTarget : '—'}"></div>
+                </div>
+                <div>
+                    <div class="form-label text-muted">Score / Grade</div>
+                    <div th:text="${paper.scoreOrGrade != null ? paper.scoreOrGrade : '—'}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${practiceSession != null}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Practice Session Details</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <div class="form-label text-muted">Method</div>
+                    <div th:text="${practiceSession.method != null ? practiceSession.method.name : '—'}"></div>
+                </div>
+                <div>
+                    <div class="form-label text-muted">Duration</div>
+                    <div th:text="${practiceSession.durationMinutes != null ? practiceSession.durationMinutes + ' min' : '—'}"></div>
+                </div>
+                <div>
+                    <div class="form-label text-muted">Scripture Passage</div>
+                    <div th:text="${practiceSession.scripturePassage != null ? practiceSession.scripturePassage : '—'}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- General Notes -->
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${item.generalNotes != null}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;">Notes</h2>
+            <div class="text-small" th:text="${item.generalNotes}"></div>
+        </div>
+    </div>
+
+    <!-- Scripture Tags -->
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${!scriptureTags.isEmpty()}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;">Scripture Tags</h2>
+            <div class="topic-tags-row">
+                <span th:each="tag : ${scriptureTags}" class="topic-tag">
+                    <span th:text="${tag.reference}"></span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

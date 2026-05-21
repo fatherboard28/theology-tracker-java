@@ -60,6 +60,14 @@ public abstract class WorkItem {
     @ManyToMany(mappedBy = "workItemRefs")
     private Set<Note> notes = new HashSet<>();
 
+    public String getTypeLabel() {
+        if (this instanceof Reading) return "Reading";
+        if (this instanceof Assignment) return "Assignment";
+        if (this instanceof Paper) return "Paper";
+        if (this instanceof PracticeSessionItem) return "Practice Session";
+        return "Work Item";
+    }
+
     @PrePersist
     private void prePersist() {
         createdAt = LocalDateTime.now();

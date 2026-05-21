@@ -27,9 +27,6 @@ public class StubControllers {
     @GetMapping("/calendar")
     public String calendar() { return "calendar/index"; }
 
-    @GetMapping("/work-items")
-    public String workItems() { return "work-items/index"; }
-
     @GetMapping("/settings")
     public String settings() { return "settings/index"; }
 

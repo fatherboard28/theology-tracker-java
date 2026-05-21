@@ -884,3 +884,5 @@ select.form-control {
 @media (max-width: 480px) {
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+[x-cloak] { display: none !important; }
