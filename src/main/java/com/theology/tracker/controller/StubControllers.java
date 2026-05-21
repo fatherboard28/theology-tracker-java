@@ -18,9 +18,6 @@ public class StubControllers {
     @GetMapping("/sessions")
     public String sessions() { return "sessions/index"; }
 
-    @GetMapping("/methods")
-    public String methods() { return "methods/index"; }
-
     @GetMapping("/calendar")
     public String calendar() { return "calendar/index"; }
 

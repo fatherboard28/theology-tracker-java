@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title th:text="${method.name}">Method</title></head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Breadcrumb & actions -->
+    <div class="page-header">
+        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+            <a th:href="@{/methods}" class="btn btn-secondary btn-sm">&larr; Methods</a>
+        </div>
+        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+            <div style="flex: 1; min-width: 0;">
+                <h1 class="page-title" style="margin: 0;" th:text="${method.name}">Method Name</h1>
+                <p class="page-subtitle" th:if="${method.description}" th:text="${method.description}"></p>
+            </div>
+            <div class="d-flex gap-2">
+                <a th:href="@{/methods/{id}/edit(id=${method.id})}" class="btn btn-secondary btn-sm">Edit</a>
+                <form th:action="@{/methods/{id}/delete(id=${method.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            th:attr="data-confirm='Delete method &quot;' + ${method.name} + '&quot;? Session references will be cleared.'">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meta card -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
+                <div>
+                    <div class="form-label" style="margin-bottom: 0.5rem;">Usage</div>
+                    <div class="d-flex align-center gap-4">
+                        <span class="text-large" style="font-weight: 600;" th:text="${usageCount}">0</span>
+                        <span class="text-small text-muted"
+                              th:text="${usageCount} + ' study session' + (${usageCount} != 1 ? 's' : '')">0 study sessions</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-label" style="margin-bottom: 0.5rem;">Created</div>
+                    <div class="text-small text-muted"
+                         th:text="${#temporals.format(method.createdAt, 'MMM d, yyyy')}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Notes -->
+    <div th:if="${method.personalNotes != null and !method.personalNotes.isBlank()}"
+         style="margin-bottom: 1.5rem;">
+        <div class="section-header">
+            <h2>Personal Notes</h2>
+            <a th:href="@{/methods/{id}/edit(id=${method.id})}" class="btn btn-secondary btn-sm">Edit</a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="note-body markdown-rendered" th:text="${method.personalNotes}"
+                     style="white-space: pre-wrap;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessions section -->
+    <div style="margin-bottom: 1.5rem;">
+        <div class="section-header">
+            <h2>Study Sessions</h2>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(sessions)}" style="padding: 2rem 0;">
+            <p>No study sessions have used this method yet.</p>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(sessions)}">
+            <div th:each="session : ${sessions}"
+                 class="d-flex align-center gap-4"
+                 style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
+                      th:text="${#temporals.format(session.sessionDate, 'MMM d, yyyy')}">Date</span>
+                <span class="text-small text-muted" style="flex-shrink: 0;"
+                      th:text="${session.durationMinutes} + ' min'">0 min</span>
+                <span class="text-small text-muted" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                      th:if="${session.workItem != null}"
+                      th:text="${session.workItem.title}"></span>
+                <span class="text-small text-muted" style="flex: 1;"
+                      th:if="${session.workItem == null}">Free-form session</span>
+                <span class="text-small text-muted" th:if="${session.reflectionNote != null and !session.reflectionNote.isBlank()}"
+                      th:text="${#strings.abbreviate(session.reflectionNote, 80)}"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes section -->
+    <div style="margin-top: 2rem;">
+        <div class="section-header">
+            <h2>Notes</h2>
+            <a th:href="@{/notes/new(parentType='METHOD',parentId=${method.id})}"
+               class="btn btn-primary btn-sm">+ Add Note</a>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(notes)}" style="padding: 2rem 0;">
+            <p>No notes yet.
+                <a th:href="@{/notes/new(parentType='METHOD',parentId=${method.id})}">Add a note</a>
+                to document your use of this method.
+            </p>
+        </div>
+
+        <div class="note-list" th:if="${!#lists.isEmpty(notes)}">
+            <div class="note-card" th:each="note : ${notes}">
+                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="d-flex align-center gap-4" style="margin-bottom: 0.25rem; flex-wrap: wrap;">
+                            <a class="note-card-title"
+                               th:href="@{/notes/{id}(id=${note.id})}"
+                               th:text="${note.title}">Note</a>
+                            <span class="text-small text-muted"
+                                  th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
+                        </div>
+                        <div class="note-preview"
+                             th:if="${note.body != null and !note.body.isBlank()}"
+                             th:text="${#strings.abbreviate(note.body, 120)}"></div>
+                        <div th:if="${!#sets.isEmpty(note.topicTags)}"
+                             class="topic-tags-row" style="margin-top: 0.3rem;">
+                            <span th:each="topic : ${note.topicTags}" class="topic-tag topic-tag-sm">
+                                <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
+                            </span>
+                        </div>
+                    </div>
+                    <a th:href="@{/notes/{id}(id=${note.id})}"
+                       class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Open</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
