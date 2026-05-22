@@ -19,6 +19,14 @@ public class DashboardController {
         this.dashboardService = dashboardService;
     }
 
+    private String formatMinutes(int totalMinutes) {
+        int hours = totalMinutes / 60;
+        int minutes = totalMinutes % 60;
+        if (hours == 0) return minutes + "m";
+        if (minutes == 0) return hours + "h";
+        return hours + "h " + minutes + "m";
+    }
+
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         model.addAttribute("currentStreak", progressService.calculateCurrentStreak());
@@ -28,8 +36,8 @@ public class DashboardController {
         model.addAttribute("lastSessionDate", lastSession.map(s -> s.getSessionDate()).orElse(null));
         model.addAttribute("lastSessionMinutes", lastSession.map(s -> s.getDurationMinutes()).orElse(null));
 
-        model.addAttribute("weekMinutes", dashboardService.getWeekMinutes());
-        model.addAttribute("monthMinutes", dashboardService.getMonthMinutes());
+        model.addAttribute("weekMinutes", formatMinutes(dashboardService.getWeekMinutes()));
+        model.addAttribute("monthMinutes", formatMinutes(dashboardService.getMonthMinutes()));
         model.addAttribute("activeCourses", dashboardService.getActiveCourses());
         model.addAttribute("activeTopics", dashboardService.getActiveTopics());
         model.addAttribute("upcomingDue", dashboardService.getUpcomingDue());
