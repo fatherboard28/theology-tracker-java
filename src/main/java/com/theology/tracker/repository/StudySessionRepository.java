@@ -43,4 +43,7 @@ public interface StudySessionRepository extends JpaRepository<StudySession, Long
 
     @Query("SELECT s FROM StudySession s ORDER BY s.sessionDate DESC LIMIT 1")
     Optional<StudySession> findLastSession();
+
+    @Query("SELECT s FROM StudySession s WHERE s.reflectionNote IS NOT NULL AND LOWER(s.reflectionNote) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY s.sessionDate DESC")
+    List<StudySession> searchByReflectionNote(@Param("q") String q);
 }

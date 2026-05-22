@@ -22,4 +22,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query("SELECT n FROM Note n JOIN n.topicTags t WHERE t.id = :topicId ORDER BY n.updatedAt DESC")
     List<Note> findByTopicTagId(@Param("topicId") Long topicId);
+
+    @Query("SELECT n FROM Note n WHERE LOWER(n.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(n.body) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY n.updatedAt DESC")
+    List<Note> searchByTitleOrBody(@Param("q") String q);
 }

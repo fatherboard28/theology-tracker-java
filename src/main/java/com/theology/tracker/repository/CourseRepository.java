@@ -23,4 +23,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     @Query("SELECT c FROM Course c JOIN c.topics t WHERE t.id = :topicId ORDER BY c.title")
     List<Course> findByTopicId(@Param("topicId") Long topicId);
+
+    @Query("SELECT c FROM Course c WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY c.title")
+    List<Course> searchByTitleOrDescription(@Param("q") String q);
 }

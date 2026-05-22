@@ -33,6 +33,9 @@ public interface WorkItemRepository extends JpaRepository<WorkItem, Long> {
     @Query("SELECT w FROM WorkItem w ORDER BY w.updatedAt DESC LIMIT 5")
     List<WorkItem> findTop5ByOrderByUpdatedAtDesc();
 
+    @Query("SELECT w FROM WorkItem w WHERE LOWER(w.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(w.generalNotes) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY w.title")
+    List<WorkItem> searchByTitleOrNotes(@Param("q") String q);
+
     long countByUnitId(Long unitId);
 
     long countByUnitIdAndStatus(Long unitId, WorkItemStatus status);

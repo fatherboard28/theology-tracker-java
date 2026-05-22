@@ -2,8 +2,6 @@ package com.theology.tracker.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.ui.Model;
 
 /**
  * Stub controllers for Phase 1.
@@ -17,10 +15,4 @@ public class StubControllers {
 
     @GetMapping("/settings")
     public String settings() { return "settings/index"; }
-
-    @GetMapping("/search")
-    public String search(@RequestParam(required = false) String q, Model model) {
-        model.addAttribute("query", q);
-        return "search/index";
-    }
 }

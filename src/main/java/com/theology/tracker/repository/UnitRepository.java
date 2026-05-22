@@ -22,4 +22,7 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
 
     @Query("SELECT u FROM Unit u JOIN u.topics t WHERE t.id = :topicId ORDER BY u.title")
     List<Unit> findByTopicId(@Param("topicId") Long topicId);
+
+    @Query("SELECT u FROM Unit u WHERE LOWER(u.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(u.description) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY u.title")
+    List<Unit> searchByTitleOrDescription(@Param("q") String q);
 }
