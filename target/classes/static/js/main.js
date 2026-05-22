@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Markdown preview ───────────────────────────────────────────────────
     initMarkdownPreview();
 
+    // ── Scripture reference validation ────────────────────────────────────
+    initScriptureValidation();
+
     // ── Auto-dismiss flash messages after 5 s ─────────────────────────────
     document.querySelectorAll('.flash').forEach((el) => {
         setTimeout(() => {
@@ -151,6 +154,90 @@ function renderMarkdown(editor, preview) {
     } catch (e) {
         console.warn('Markdown render error:', e);
     }
+}
+
+// ── Scripture reference validation ────────────────────────────────────────
+
+const SCRIPTURE_BOOKS = new Set([
+    'Gen','Exo','Lev','Num','Deu','Jos','Jdg','Rut','1Sa','2Sa',
+    '1Ki','2Ki','1Ch','2Ch','Ezr','Neh','Est','Job','Psa','Pro',
+    'Ecc','Son','Isa','Jer','Lam','Eze','Dan','Hos','Joe','Amo',
+    'Oba','Jon','Mic','Nah','Hab','Zep','Hag','Zec','Mal',
+    'Mat','Mrk','Luk','Jhn','Act','Rom','1Co','2Co','Gal','Eph',
+    'Phi','Col','1Th','2Th','1Ti','2Ti','Tit','Phm','Heb','Jam',
+    '1Pe','2Pe','1Jo','2Jo','3Jo','Jud','Rev'
+]);
+
+const SCRIPTURE_REF_RE = /^([1-9]?[A-Z][a-z]{1,2}) (\d+)(?::(\d+)(?:[–\-](\d+))?)?$/;
+
+/**
+ * Validates a scripture reference input and applies visual feedback.
+ * @param {HTMLInputElement} input
+ * @returns {boolean}
+ */
+function validateScriptureRef(input) {
+    const val = input.value.trim();
+    const icon = input.parentElement?.querySelector('.scripture-validation-icon');
+    if (!val) {
+        input.classList.remove('input-valid', 'input-invalid');
+        if (icon) icon.textContent = '';
+        return true;
+    }
+    const m = SCRIPTURE_REF_RE.exec(val);
+    const valid = m !== null && SCRIPTURE_BOOKS.has(m[1]);
+    input.classList.toggle('input-valid', valid);
+    input.classList.toggle('input-invalid', !valid);
+    if (icon) icon.textContent = valid ? '✓' : '✕';
+    if (icon) icon.style.color = valid ? 'var(--color-success, #16a34a)' : 'var(--color-danger, #dc2626)';
+    return valid;
+}
+
+/** Adds a new scripture tag input row to the container. */
+function addScriptureTagRow() {
+    const container = document.getElementById('scripture-tags-container');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'scripture-tag-row d-flex gap-2 align-center';
+    row.style.marginBottom = '0.5rem';
+    row.innerHTML = `
+        <input type="text" name="scriptureTags"
+               class="form-control scripture-ref-input"
+               placeholder="e.g. Gen 1:1"
+               autocomplete="off"/>
+        <span class="scripture-validation-icon" aria-hidden="true"></span>
+        <button type="button" class="btn btn-secondary btn-sm"
+                onclick="removeScriptureTag(this)" title="Remove">✕</button>
+    `;
+    container.appendChild(row);
+    const input = row.querySelector('input');
+    input.addEventListener('blur', () => validateScriptureRef(input));
+    input.addEventListener('input', () => validateScriptureRef(input));
+    input.focus();
+}
+
+/** Removes the scripture tag row containing the given button. */
+function removeScriptureTag(btn) {
+    const container = document.getElementById('scripture-tags-container');
+    const row = btn.closest('.scripture-tag-row');
+    if (!row) return;
+    // Keep at least one empty row
+    const rows = container.querySelectorAll('.scripture-tag-row');
+    if (rows.length === 1) {
+        const input = row.querySelector('input');
+        if (input) { input.value = ''; validateScriptureRef(input); }
+        return;
+    }
+    row.remove();
+}
+
+/** Wire validation onto all existing scripture ref inputs on the page. */
+function initScriptureValidation() {
+    document.querySelectorAll('.scripture-ref-input:not([data-scripture-wired])').forEach(input => {
+        input.dataset.scriptureWired = 'true';
+        input.addEventListener('blur', () => validateScriptureRef(input));
+        input.addEventListener('input', () => validateScriptureRef(input));
+        if (input.value.trim()) validateScriptureRef(input);
+    });
 }
 
 /**

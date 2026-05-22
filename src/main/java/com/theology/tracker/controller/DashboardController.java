@@ -1,22 +1,22 @@
 package com.theology.tracker.controller;
 
-import com.theology.tracker.model.StudySession;
+import com.theology.tracker.service.DashboardService;
 import com.theology.tracker.service.ProgressService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Optional;
 
 @Controller
 public class DashboardController {
 
     private final ProgressService progressService;
+    private final DashboardService dashboardService;
 
-    public DashboardController(ProgressService progressService) {
+    public DashboardController(ProgressService progressService, DashboardService dashboardService) {
         this.progressService = progressService;
+        this.dashboardService = dashboardService;
     }
 
     @GetMapping("/dashboard")
@@ -24,18 +24,18 @@ public class DashboardController {
         model.addAttribute("currentStreak", progressService.calculateCurrentStreak());
         model.addAttribute("longestStreak", progressService.calculateLongestStreak());
 
-        Optional<StudySession> lastSession = progressService.getLastSession();
-        model.addAttribute("lastSessionDate", lastSession.map(StudySession::getSessionDate).orElse(null));
-        model.addAttribute("lastSessionMinutes", lastSession.map(StudySession::getDurationMinutes).orElse(null));
+        var lastSession = progressService.getLastSession();
+        model.addAttribute("lastSessionDate", lastSession.map(s -> s.getSessionDate()).orElse(null));
+        model.addAttribute("lastSessionMinutes", lastSession.map(s -> s.getDurationMinutes()).orElse(null));
 
-        // Stubs for remaining dashboard widgets — replaced in Phase 11
-        model.addAttribute("weekMinutes",    0);
-        model.addAttribute("monthMinutes",   0);
-        model.addAttribute("activeCourses",  Collections.emptyList());
-        model.addAttribute("activeTopics",   Collections.emptyList());
-        model.addAttribute("upcomingDue",    Collections.emptyList());
-        model.addAttribute("recentNotes",    Collections.emptyList());
-        model.addAttribute("recentWorkItems",Collections.emptyList());
+        model.addAttribute("weekMinutes", dashboardService.getWeekMinutes());
+        model.addAttribute("monthMinutes", dashboardService.getMonthMinutes());
+        model.addAttribute("activeCourses", dashboardService.getActiveCourses());
+        model.addAttribute("activeTopics", dashboardService.getActiveTopics());
+        model.addAttribute("upcomingDue", dashboardService.getUpcomingDue());
+        model.addAttribute("recentWorkItems", dashboardService.getRecentWorkItems());
+        model.addAttribute("recentNotes", dashboardService.getRecentNotes());
+        model.addAttribute("heatmapDays", dashboardService.getHeatmapDays());
 
         return "dashboard/index";
     }

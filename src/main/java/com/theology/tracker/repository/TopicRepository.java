@@ -17,4 +17,6 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
     List<Topic> findByType(TopicType type);
 
     List<Topic> findByTitleContainingIgnoreCase(String titleFragment);
+
+    List<Topic> findAllByOrderByCreatedAtDesc();
 }

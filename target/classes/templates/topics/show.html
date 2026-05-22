@@ -198,10 +198,44 @@
         </div>
     </div>
 
-    <!-- Placeholder for tagged courses, units, sessions (Phase 13) -->
+    <!-- Tagged Sessions -->
+    <div style="margin-top: 2rem;">
+        <div class="section-header">
+            <h2>Tagged Sessions</h2>
+            <a th:href="@{/sessions/new(topicId=${topic.id})}"
+               class="btn btn-primary btn-sm">+ Log Session</a>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(sessions)}" style="padding: 2rem 0;">
+            <p>No sessions tagged with this topic yet.</p>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(sessions)}">
+            <div th:each="s : ${sessions}"
+                 class="d-flex align-center gap-4"
+                 style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
+                      th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}">Date</span>
+                <span class="text-small text-muted" style="flex-shrink: 0;"
+                      th:text="${s.durationMinutes} + ' min'">0 min</span>
+                <span class="text-small text-muted" style="flex-shrink: 0;"
+                      th:if="${s.method != null}"
+                      th:text="'via ' + ${s.method.name}"></span>
+                <span class="text-small text-muted" style="flex: 1; min-width: 0;"
+                      th:if="${s.workItem != null}"
+                      th:text="${s.workItem.title}"></span>
+                <span class="text-small text-muted" style="flex: 1; font-style: italic;"
+                      th:if="${s.workItem == null}">Free-form</span>
+                <a th:href="@{/sessions/{id}(id=${s.id})}"
+                   class="btn btn-secondary btn-sm" style="flex-shrink: 0;">View</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placeholder for tagged courses and units (Phase 13) -->
     <div style="margin-top: 2rem;">
         <p class="text-muted text-small" style="font-style: italic;">
-            Tagged courses, units, and sessions will appear here in a future phase.
+            Tagged courses and units will appear here in a future phase.
         </p>
     </div>
 

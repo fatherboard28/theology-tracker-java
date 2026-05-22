@@ -1166,6 +1166,53 @@ select.form-control {
 
 [x-cloak] { display: none !important; }
 
+/* ── Calendar Heatmap ─────────────────────────────────────────────────────── */
+.heatmap-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 14px);
+    gap: 3px;
+}
+
+.heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--gray-100);
+    cursor: default;
+}
+
+.heatmap-cell.intensity-1 { background: #ddd6fe; }
+.heatmap-cell.intensity-2 { background: #a78bfa; }
+.heatmap-cell.intensity-3 { background: #7c3aed; }
+.heatmap-cell.intensity-4 { background: #4c1d95; }
+
+.heatmap-cell.heatmap-due {
+    outline: 2px solid var(--amber);
+    outline-offset: 1px;
+}
+
+.heatmap-dow-labels {
+    display: grid;
+    grid-template-rows: repeat(7, 14px);
+    gap: 3px;
+    font-size: 10px;
+    color: var(--gray-400);
+    line-height: 14px;
+    flex-shrink: 0;
+}
+
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+}
+
+.heatmap-legend .heatmap-cell {
+    flex-shrink: 0;
+}
+
 /* ── Scripture reference validation states ───────────────────────────────── */
 :root {
     --color-success: #16a34a;

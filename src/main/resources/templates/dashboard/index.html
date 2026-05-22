@@ -6,13 +6,199 @@
 <head><title>Dashboard</title></head>
 <body>
 <div layout:fragment="content">
+
     <div class="page-header">
         <h1 class="page-title">Dashboard</h1>
         <p class="page-subtitle">Your study at a glance</p>
     </div>
-    <div class="empty-state">
-        <p>Dashboard widgets will be implemented in Phase 11.</p>
+
+    <!-- ── Stat Cards ──────────────────────────────────────────────────────── -->
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value" th:text="${currentStreak}">0</div>
+            <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${longestStreak}">0</div>
+            <div class="stat-label">All-Time Best</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${weekMinutes}">0</div>
+            <div class="stat-label">Minutes This Week</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" th:text="${monthMinutes}">0</div>
+            <div class="stat-label">Minutes This Month</div>
+        </div>
     </div>
+
+    <!-- ── Last Session ────────────────────────────────────────────────────── -->
+    <div class="dashboard-section" th:if="${lastSessionDate != null}" style="margin-bottom: 1.25rem; padding: 0.875rem 1.25rem;">
+        <span class="text-small text-muted">Last session:</span>
+        <span class="text-small" style="font-weight: 600; margin-left: 0.25rem;"
+              th:text="${#temporals.format(lastSessionDate, 'MMM d, yyyy')}"></span>
+        <span class="text-small text-muted" th:if="${lastSessionMinutes != null}"
+              th:text="' — ' + ${lastSessionMinutes} + ' min'"></span>
+        <a th:href="@{/sessions/new}" class="btn btn-primary btn-sm" style="float: right;">+ Log Session</a>
+    </div>
+    <div th:if="${lastSessionDate == null}" style="margin-bottom: 1.25rem;">
+        <a th:href="@{/sessions/new}" class="btn btn-primary btn-sm">+ Log Your First Session</a>
+    </div>
+
+    <!-- ── Two-Column Layout ───────────────────────────────────────────────── -->
+    <div class="dashboard-columns">
+
+        <!-- Left Column -->
+        <div>
+            <!-- Active Courses -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2>Active Courses</h2>
+                    <a th:href="@{/courses}" class="btn btn-secondary btn-sm">All Courses</a>
+                </div>
+                <div th:if="${#lists.isEmpty(activeCourses)}" class="empty-state" style="padding: 1.5rem 0;">
+                    <p>No active courses. <a th:href="@{/courses/new}">Start one</a>.</p>
+                </div>
+                <div th:if="${!#lists.isEmpty(activeCourses)}" class="course-list">
+                    <div class="course-card" th:each="c : ${activeCourses}">
+                        <a class="course-card-title"
+                           th:href="@{/courses/{id}(id=${c.id})}"
+                           th:text="${c.title}">Course</a>
+                        <div class="progress-bar">
+                            <div class="progress-fill" th:style="'width: ' + ${c.progressPct} + '%'"></div>
+                        </div>
+                        <div class="course-card-meta">
+                            <span th:text="${c.progressPct} + '% complete'">0% complete</span>
+                            <span th:if="${c.targetDate != null}"
+                                  th:text="'Target: ' + ${#temporals.format(c.targetDate, 'MMM d, yyyy')}"></span>
+                            <span th:if="${c.targetDate == null}" class="text-muted">No target date</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Due Dates -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2>Due in Next 7 Days</h2>
+                </div>
+                <div th:if="${#lists.isEmpty(upcomingDue)}" class="empty-state" style="padding: 1.5rem 0;">
+                    <p>Nothing due this week.</p>
+                </div>
+                <ul th:if="${!#lists.isEmpty(upcomingDue)}" class="due-list">
+                    <li class="due-item" th:each="item : ${upcomingDue}">
+                        <span class="due-date" th:text="${#temporals.format(item.dueDate, 'MMM d')}">Jan 1</span>
+                        <span class="due-title">
+                            <a th:href="${item.link}" th:text="${item.title}">Item</a>
+                        </span>
+                        <span class="badge text-small" th:text="${item.entityType}">Type</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+            <!-- Active Topics -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2>Topics</h2>
+                    <a th:href="@{/topics}" class="btn btn-secondary btn-sm">All Topics</a>
+                </div>
+                <div th:if="${#lists.isEmpty(activeTopics)}" class="empty-state" style="padding: 1.5rem 0;">
+                    <p>No topics yet. <a th:href="@{/topics/new}">Create one</a>.</p>
+                </div>
+                <div th:if="${!#lists.isEmpty(activeTopics)}" class="topic-list">
+                    <div class="topic-card" th:each="t : ${activeTopics}"
+                         style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                        <a class="topic-card-title"
+                           th:href="@{/topics/{id}(id=${t.id})}"
+                           th:text="${t.title}">Topic</a>
+                        <span class="badge" th:text="${t.itemCount} + ' items'">0 items</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recently Modified Work Items -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2>Recent Work Items</h2>
+                    <a th:href="@{/work-items}" class="btn btn-secondary btn-sm">All</a>
+                </div>
+                <div th:if="${#lists.isEmpty(recentWorkItems)}" class="empty-state" style="padding: 1.5rem 0;">
+                    <p>No work items yet.</p>
+                </div>
+                <ul th:if="${!#lists.isEmpty(recentWorkItems)}" class="recent-list">
+                    <li th:each="wi : ${recentWorkItems}">
+                        <a th:href="@{/work-items/{id}(id=${wi.id})}" th:text="${wi.title}"
+                           style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Item</a>
+                        <span class="recent-date" th:text="${#temporals.format(wi.updatedAt, 'MMM d')}"></span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Recently Modified Notes -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2>Recent Notes</h2>
+                    <a th:href="@{/notes}" class="btn btn-secondary btn-sm">All</a>
+                </div>
+                <div th:if="${#lists.isEmpty(recentNotes)}" class="empty-state" style="padding: 1.5rem 0;">
+                    <p>No notes yet.</p>
+                </div>
+                <ul th:if="${!#lists.isEmpty(recentNotes)}" class="recent-list">
+                    <li th:each="note : ${recentNotes}">
+                        <a th:href="@{/notes/{id}(id=${note.id})}" th:text="${note.title}"
+                           style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Note</a>
+                        <span class="recent-date" th:text="${#temporals.format(note.updatedAt, 'MMM d')}"></span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Calendar Heatmap ────────────────────────────────────────────────── -->
+    <div class="dashboard-section" style="overflow-x: auto;">
+        <div class="section-header" style="margin-bottom: 0.75rem;">
+            <h2>Activity — Trailing 3 Months</h2>
+            <div class="heatmap-legend">
+                <span class="text-small text-muted">Less</span>
+                <span class="heatmap-cell intensity-0"></span>
+                <span class="heatmap-cell intensity-1"></span>
+                <span class="heatmap-cell intensity-2"></span>
+                <span class="heatmap-cell intensity-3"></span>
+                <span class="heatmap-cell intensity-4"></span>
+                <span class="text-small text-muted">More</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+            <!-- Day-of-week labels -->
+            <div class="heatmap-dow-labels">
+                <span>Mon</span>
+                <span></span>
+                <span>Wed</span>
+                <span></span>
+                <span>Fri</span>
+                <span></span>
+                <span>Sun</span>
+            </div>
+            <!-- Grid -->
+            <div class="heatmap-grid">
+                <div th:each="day : ${heatmapDays}"
+                     class="heatmap-cell"
+                     th:classappend="'intensity-' + ${day.intensityLevel} + (${day.hasDueDate} ? ' heatmap-due' : '')"
+                     th:title="${#temporals.format(day.date, 'MMM d, yyyy') + ' — ' + (day.intensityLevel == 0 ? 'No activity' : (day.intensityLevel == 1 ? '1–30 min' : (day.intensityLevel == 2 ? '31–60 min' : (day.intensityLevel == 3 ? '61–120 min' : '120+ min'))))}">
+                </div>
+            </div>
+        </div>
+
+        <div class="text-small text-muted" style="margin-top: 0.5rem;">
+            <span style="display: inline-block; width: 10px; height: 10px; border: 2px solid var(--amber); border-radius: 2px; vertical-align: middle;"></span>
+            <span style="margin-left: 0.25rem;">Upcoming due date</span>
+        </div>
+    </div>
+
 </div>
 </body>
 </html>

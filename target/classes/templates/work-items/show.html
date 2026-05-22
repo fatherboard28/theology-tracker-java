@@ -177,6 +177,14 @@
         </div>
     </div>
 
+    <!-- General Notes -->
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${item.generalNotes != null}">
+        <div class="card-body">
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;">Notes</h2>
+            <div class="text-small" th:text="${item.generalNotes}"></div>
+        </div>
+    </div>
+
     <!-- Scripture Tags -->
     <div class="card" style="margin-bottom: 1.5rem;" th:if="${!scriptureTags.isEmpty()}">
         <div class="card-body">
@@ -185,6 +193,40 @@
                 <span th:each="tag : ${scriptureTags}" class="topic-tag">
                     <span th:text="${tag.reference}"></span>
                 </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Study Sessions -->
+    <div style="margin-top: 2rem;">
+        <div class="section-header">
+            <h2>Study Sessions</h2>
+            <a th:href="@{/sessions/new(workItemId=${item.id},returnUrl='/work-items/' + ${item.id})}"
+               class="btn btn-primary btn-sm">+ Log Session</a>
+        </div>
+
+        <div class="empty-state" th:if="${#lists.isEmpty(sessions)}" style="padding: 2rem 0;">
+            <p>No sessions logged for this work item yet.
+                <a th:href="@{/sessions/new(workItemId=${item.id})}">Log a session.</a>
+            </p>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(sessions)}">
+            <div th:each="s : ${sessions}"
+                 class="d-flex align-center gap-4"
+                 style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
+                      th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}">Date</span>
+                <span class="text-small text-muted" style="flex-shrink: 0;"
+                      th:text="${s.durationMinutes} + ' min'">0 min</span>
+                <span class="text-small text-muted" style="flex-shrink: 0;"
+                      th:if="${s.method != null}"
+                      th:text="'via ' + ${s.method.name}"></span>
+                <span class="text-small text-muted" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                      th:if="${s.reflectionNote != null and !s.reflectionNote.isBlank()}"
+                      th:text="${#strings.abbreviate(s.reflectionNote, 80)}"></span>
+                <a th:href="@{/sessions/{id}(id=${s.id})}"
+                   class="btn btn-secondary btn-sm" style="flex-shrink: 0;">View</a>
             </div>
         </div>
     </div>
