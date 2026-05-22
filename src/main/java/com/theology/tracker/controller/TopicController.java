@@ -1,20 +1,17 @@
 package com.theology.tracker.controller;
 
 import com.theology.tracker.dto.TopicFormDto;
-import com.theology.tracker.model.NoteParentType;
-import com.theology.tracker.model.Topic;
-import com.theology.tracker.model.TopicType;
-import com.theology.tracker.service.NoteService;
-import com.theology.tracker.service.ProgressService;
-import com.theology.tracker.service.StudySessionService;
-import com.theology.tracker.service.TopicService;
-import com.theology.tracker.service.WorkItemService;
+import com.theology.tracker.model.*;
+import com.theology.tracker.service.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Controller
 @RequestMapping("/topics")
@@ -25,13 +22,25 @@ public class TopicController {
     private final NoteService noteService;
     private final StudySessionService sessionService;
     private final ProgressService progressService;
+    private final CourseService courseService;
+    private final UnitService unitService;
 
-    public TopicController(TopicService topicService, WorkItemService workItemService, NoteService noteService, StudySessionService sessionService, ProgressService progressService) {
+    public TopicController(
+        TopicService topicService,
+        WorkItemService workItemService,
+        NoteService noteService,
+        StudySessionService sessionService,
+        ProgressService progressService,
+        CourseService courseService,
+        UnitService unitService
+    ) {
         this.topicService = topicService;
         this.workItemService = workItemService;
         this.noteService = noteService;
         this.sessionService = sessionService;
         this.progressService = progressService;
+        this.courseService = courseService;
+        this.unitService = unitService;
     }
 
     @GetMapping
@@ -71,15 +80,77 @@ public class TopicController {
     @GetMapping("/{id}")
     public String show(@PathVariable Long id, Model model) {
         Topic topic = topicService.findById(id);
+
         List<Topic> rootTopics = topicService.findRoots().stream()
             .filter(t -> !t.getId().equals(id))
             .toList();
+
+        List<WorkItem> ownedWorkItems = workItemService.findByOwningTopic(id);
+        List<Note> ownedNotes = noteService.findByParent(NoteParentType.TOPIC, id);
+        List<WorkItem> taggedWorkItems = workItemService.findTaggedByTopic(id);
+        List<Course> taggedCourses = courseService.findTaggedByTopic(id);
+        List<Unit> taggedUnits = unitService.findTaggedByTopic(id);
+        List<Note> taggedNotes = noteService.findTaggedByTopic(id);
+        List<StudySession> sessions = sessionService.findByTopic(id);
+
+        // Group owned work items by type
+        List<WorkItem> ownedReadings = ownedWorkItems.stream().filter(w -> w instanceof Reading).toList();
+        List<WorkItem> ownedAssignments = ownedWorkItems.stream().filter(w -> w instanceof Assignment).toList();
+        List<WorkItem> ownedPapers = ownedWorkItems.stream().filter(w -> w instanceof Paper).toList();
+        List<WorkItem> ownedPractices = ownedWorkItems.stream().filter(w -> w instanceof PracticeSessionItem).toList();
+
+        // Summary: union of owned and tagged (avoid double-counting items that appear in both)
+        Set<Long> ownedIds = ownedWorkItems.stream().map(WorkItem::getId).collect(Collectors.toSet());
+        List<WorkItem> taggedOnly = taggedWorkItems.stream()
+            .filter(w -> !ownedIds.contains(w.getId()))
+            .toList();
+        long totalWorkItems = ownedWorkItems.size() + taggedOnly.size();
+        long completeWorkItems = ownedWorkItems.stream().filter(w -> w.getStatus() == WorkItemStatus.COMPLETE).count()
+            + taggedOnly.stream().filter(w -> w.getStatus() == WorkItemStatus.COMPLETE).count();
+
+        // Available entities for tagging (not already tagged or owned by this topic)
+        Set<Long> taggedCourseIds = taggedCourses.stream().map(Course::getId).collect(Collectors.toSet());
+        Set<Long> taggedUnitIds = taggedUnits.stream().map(Unit::getId).collect(Collectors.toSet());
+        Set<Long> alreadyAssocWorkItemIds = Stream.concat(ownedWorkItems.stream(), taggedWorkItems.stream())
+            .map(WorkItem::getId).collect(Collectors.toSet());
+        Set<Long> ownedNoteIds = ownedNotes.stream().map(Note::getId).collect(Collectors.toSet());
+        Set<Long> taggedNoteIds = taggedNotes.stream().map(Note::getId).collect(Collectors.toSet());
+        Set<Long> alreadyAssocNoteIds = Stream.concat(ownedNoteIds.stream(), taggedNoteIds.stream())
+            .collect(Collectors.toSet());
+
+        List<Course> availableCourses = courseService.findAll().stream()
+            .filter(c -> !taggedCourseIds.contains(c.getId()))
+            .toList();
+        List<Unit> availableUnits = unitService.findAll().stream()
+            .filter(u -> !taggedUnitIds.contains(u.getId()))
+            .toList();
+        List<WorkItem> availableWorkItems = workItemService.findAll().stream()
+            .filter(w -> !alreadyAssocWorkItemIds.contains(w.getId()))
+            .toList();
+        List<Note> availableNotes = noteService.findAll().stream()
+            .filter(n -> !alreadyAssocNoteIds.contains(n.getId()))
+            .toList();
+
         model.addAttribute("topic", topic);
         model.addAttribute("rootTopics", rootTopics);
-        model.addAttribute("ownedWorkItems", workItemService.findByOwningTopic(id));
-        model.addAttribute("notes", noteService.findByParent(NoteParentType.TOPIC, id));
-        model.addAttribute("sessions", sessionService.findByTopic(id));
+        model.addAttribute("ownedWorkItems", ownedWorkItems);
+        model.addAttribute("ownedReadings", ownedReadings);
+        model.addAttribute("ownedAssignments", ownedAssignments);
+        model.addAttribute("ownedPapers", ownedPapers);
+        model.addAttribute("ownedPractices", ownedPractices);
+        model.addAttribute("ownedNotes", ownedNotes);
+        model.addAttribute("taggedWorkItems", taggedWorkItems);
+        model.addAttribute("taggedCourses", taggedCourses);
+        model.addAttribute("taggedUnits", taggedUnits);
+        model.addAttribute("taggedNotes", taggedNotes);
+        model.addAttribute("sessions", sessions);
+        model.addAttribute("totalWorkItems", totalWorkItems);
+        model.addAttribute("completeWorkItems", completeWorkItems);
         model.addAttribute("totalLoggedMinutes", progressService.totalMinutesForTopic(id));
+        model.addAttribute("availableCourses", availableCourses);
+        model.addAttribute("availableUnits", availableUnits);
+        model.addAttribute("availableWorkItems", availableWorkItems);
+        model.addAttribute("availableNotes", availableNotes);
         return "topics/show";
     }
 
@@ -116,5 +187,63 @@ public class TopicController {
         topicService.delete(id);
         ra.addFlashAttribute("successMessage", "Topic deleted.");
         return "redirect:/topics";
+    }
+
+    // --- Tagging actions ---
+
+    @PostMapping("/{id}/tag-course")
+    public String tagCourse(@PathVariable Long id, @RequestParam Long courseId, RedirectAttributes ra) {
+        courseService.tagWithTopic(courseId, id);
+        ra.addFlashAttribute("successMessage", "Course tagged.");
+        return "redirect:/topics/" + id;
+    }
+
+    @PostMapping("/{id}/untag-course/{courseId}")
+    public String untagCourse(@PathVariable Long id, @PathVariable Long courseId, RedirectAttributes ra) {
+        courseService.untagFromTopic(courseId, id);
+        ra.addFlashAttribute("successMessage", "Course untagged.");
+        return "redirect:/topics/" + id;
+    }
+
+    @PostMapping("/{id}/tag-unit")
+    public String tagUnit(@PathVariable Long id, @RequestParam Long unitId, RedirectAttributes ra) {
+        unitService.tagWithTopic(unitId, id);
+        ra.addFlashAttribute("successMessage", "Unit tagged.");
+        return "redirect:/topics/" + id;
+    }
+
+    @PostMapping("/{id}/untag-unit/{unitId}")
+    public String untagUnit(@PathVariable Long id, @PathVariable Long unitId, RedirectAttributes ra) {
+        unitService.untagFromTopic(unitId, id);
+        ra.addFlashAttribute("successMessage", "Unit untagged.");
+        return "redirect:/topics/" + id;
+    }
+
+    @PostMapping("/{id}/tag-work-item")
+    public String tagWorkItem(@PathVariable Long id, @RequestParam Long workItemId, RedirectAttributes ra) {
+        workItemService.tagWithTopic(workItemId, id);
+        ra.addFlashAttribute("successMessage", "Work item tagged.");
+        return "redirect:/topics/" + id;
+    }
+
+    @PostMapping("/{id}/untag-work-item/{workItemId}")
+    public String untagWorkItem(@PathVariable Long id, @PathVariable Long workItemId, RedirectAttributes ra) {
+        workItemService.untagFromTopic(workItemId, id);
+        ra.addFlashAttribute("successMessage", "Work item untagged.");
+        return "redirect:/topics/" + id;
+    }
+
+    @PostMapping("/{id}/tag-note")
+    public String tagNote(@PathVariable Long id, @RequestParam Long noteId, RedirectAttributes ra) {
+        noteService.tagWithTopic(noteId, id);
+        ra.addFlashAttribute("successMessage", "Note tagged.");
+        return "redirect:/topics/" + id;
+    }
+
+    @PostMapping("/{id}/untag-note/{noteId}")
+    public String untagNote(@PathVariable Long id, @PathVariable Long noteId, RedirectAttributes ra) {
+        noteService.untagFromTopic(noteId, id);
+        ra.addFlashAttribute("successMessage", "Note untagged.");
+        return "redirect:/topics/" + id;
     }
 }

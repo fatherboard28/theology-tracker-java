@@ -42,4 +42,7 @@ public interface WorkItemRepository extends JpaRepository<WorkItem, Long> {
 
     @Query("SELECT COUNT(DISTINCT w) FROM WorkItem w JOIN w.topicTags t WHERE t.id = :topicId")
     long countTaggedByTopicId(@Param("topicId") Long topicId);
+
+    @Query("SELECT w FROM WorkItem w JOIN w.topicTags t WHERE t.id = :topicId ORDER BY w.title")
+    List<WorkItem> findByTopicTagId(@Param("topicId") Long topicId);
 }

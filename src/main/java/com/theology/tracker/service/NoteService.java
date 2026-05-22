@@ -85,6 +85,25 @@ public class NoteService {
         };
     }
 
+    @Transactional(readOnly = true)
+    public List<Note> findTaggedByTopic(Long topicId) {
+        return noteRepo.findByTopicTagId(topicId);
+    }
+
+    public void tagWithTopic(Long noteId, Long topicId) {
+        Note note = findById(noteId);
+        Topic topic = topicRepo.findById(topicId)
+            .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
+        note.getTopicTags().add(topic);
+        noteRepo.save(note);
+    }
+
+    public void untagFromTopic(Long noteId, Long topicId) {
+        Note note = findById(noteId);
+        note.getTopicTags().removeIf(t -> t.getId().equals(topicId));
+        noteRepo.save(note);
+    }
+
     public Note create(NoteFormDto form) {
         validate(form);
         Note note = new Note();

@@ -3,6 +3,8 @@ package com.theology.tracker.repository;
 import com.theology.tracker.model.Course;
 import com.theology.tracker.model.CourseStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -18,4 +20,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByTargetCompletionBetweenAndStatusNot(LocalDate from, LocalDate to, CourseStatus status);
 
     List<Course> findByTargetCompletionBetween(LocalDate from, LocalDate to);
+
+    @Query("SELECT c FROM Course c JOIN c.topics t WHERE t.id = :topicId ORDER BY c.title")
+    List<Course> findByTopicId(@Param("topicId") Long topicId);
 }

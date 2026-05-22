@@ -3,6 +3,7 @@ package com.theology.tracker.service;
 import com.theology.tracker.dto.UnitFormDto;
 import com.theology.tracker.exception.ResourceNotFoundException;
 import com.theology.tracker.model.Course;
+import com.theology.tracker.model.Topic;
 import com.theology.tracker.model.Unit;
 import com.theology.tracker.model.WorkItemStatus;
 import com.theology.tracker.repository.CourseRepository;
@@ -30,6 +31,11 @@ public class UnitService {
         this.courseRepo = courseRepo;
         this.workItemRepo = workItemRepo;
         this.topicRepo = topicRepo;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Unit> findAll() {
+        return unitRepo.findAll();
     }
 
     @Transactional(readOnly = true)
@@ -73,6 +79,25 @@ public class UnitService {
             unit.setUnitOrder(i + 1);
             unitRepo.save(unit);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<Unit> findTaggedByTopic(Long topicId) {
+        return unitRepo.findByTopicId(topicId);
+    }
+
+    public void tagWithTopic(Long unitId, Long topicId) {
+        Unit unit = findById(unitId);
+        Topic topic = topicRepo.findById(topicId)
+            .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
+        unit.getTopics().add(topic);
+        unitRepo.save(unit);
+    }
+
+    public void untagFromTopic(Long unitId, Long topicId) {
+        Unit unit = findById(unitId);
+        unit.getTopics().removeIf(t -> t.getId().equals(topicId));
+        unitRepo.save(unit);
     }
 
     public void checkAndAutoComplete(Long unitId) {

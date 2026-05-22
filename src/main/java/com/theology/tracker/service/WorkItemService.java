@@ -75,6 +75,25 @@ public class WorkItemService {
     }
 
     @Transactional(readOnly = true)
+    public List<WorkItem> findTaggedByTopic(Long topicId) {
+        return workItemRepo.findByTopicTagId(topicId);
+    }
+
+    public void tagWithTopic(Long workItemId, Long topicId) {
+        WorkItem item = findById(workItemId);
+        Topic topic = topicRepo.findById(topicId)
+            .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
+        item.getTopicTags().add(topic);
+        workItemRepo.save(item);
+    }
+
+    public void untagFromTopic(Long workItemId, Long topicId) {
+        WorkItem item = findById(workItemId);
+        item.getTopicTags().removeIf(t -> t.getId().equals(topicId));
+        workItemRepo.save(item);
+    }
+
+    @Transactional(readOnly = true)
     public List<ScriptureTag> findScriptureTagsForWorkItem(Long workItemId) {
         return scriptureTagRepo.findByEntityTypeAndEntityId(ScriptureEntityType.WORK_ITEM, workItemId);
     }

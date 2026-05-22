@@ -70,6 +70,25 @@ public class CourseService {
     }
 
     @Transactional(readOnly = true)
+    public List<Course> findTaggedByTopic(Long topicId) {
+        return courseRepo.findByTopicId(topicId);
+    }
+
+    public void tagWithTopic(Long courseId, Long topicId) {
+        Course course = findById(courseId);
+        Topic topic = topicRepo.findById(topicId)
+            .orElseThrow(() -> new ResourceNotFoundException("Topic not found: " + topicId));
+        course.getTopics().add(topic);
+        courseRepo.save(course);
+    }
+
+    public void untagFromTopic(Long courseId, Long topicId) {
+        Course course = findById(courseId);
+        course.getTopics().removeIf(t -> t.getId().equals(topicId));
+        courseRepo.save(course);
+    }
+
+    @Transactional(readOnly = true)
     public int calculateProgress(Course course) {
         long total = course.getUnits().stream()
             .mapToLong(u -> workItemRepo.countByUnitId(u.getId()))

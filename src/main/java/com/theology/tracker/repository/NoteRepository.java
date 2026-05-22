@@ -4,6 +4,7 @@ import com.theology.tracker.model.Note;
 import com.theology.tracker.model.NoteParentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,4 +19,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     @Query("SELECT n FROM Note n ORDER BY n.updatedAt DESC LIMIT 5")
     List<Note> findTop5ByOrderByUpdatedAtDesc();
+
+    @Query("SELECT n FROM Note n JOIN n.topicTags t WHERE t.id = :topicId ORDER BY n.updatedAt DESC")
+    List<Note> findByTopicTagId(@Param("topicId") Long topicId);
 }
