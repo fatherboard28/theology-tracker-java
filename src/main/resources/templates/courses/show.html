@@ -172,7 +172,7 @@
                                 </form>
                                 <a th:href="@{/work-items/{id}(id=${wi.id})}"
                                    th:text="${wi.title}"
-                                   th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-muted);' : ''}"
+                                   th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}"
                                    style="flex: 1; min-width: 0;">Work Item</a>
                                 <span class="badge text-small"
                                       th:text="${wi.typeLabel}">Type</span>

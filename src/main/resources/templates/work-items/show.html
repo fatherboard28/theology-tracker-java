@@ -163,7 +163,7 @@
             <div th:if="${!#sets.isEmpty(item.notes)}">
                 <div th:each="note : ${item.notes}"
                      class="d-flex align-center gap-4"
-                     style="padding: 0.5rem 0; border-bottom: 1px solid var(--gray-100);">
+                     style="padding: 8px 0; border-bottom: 1px solid var(--border);">
                     <a th:href="@{/notes/{id}(id=${note.id})}"
                        th:text="${note.title}" style="flex: 1; min-width: 0;">Note</a>
                     <span class="text-small text-muted"

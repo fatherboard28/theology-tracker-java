@@ -6,205 +6,314 @@
 <head><title th:text="${note.title}">Note</title></head>
 <body>
 <!--
-  Single-page note editor.
-  Alpine manages two states: editing (textarea) vs viewing (rendered markdown).
-  The hidden #note-body-raw element holds the server-provided body; Alpine reads
-  it at init time (safe because Alpine boots after defer scripts finish).
-  The main form saves title + topics + body together.
-  Autosave (body only) fires 800 ms after the user stops typing.
+  Notion-like note page.
+  The body is rendered as a sequence of contenteditable blocks (.nb).
+  Focused block shows raw markdown; blurred block shows rendered HTML.
+  Autosave fires 300 ms after the last keystroke via fetch().
+  The main form (title + topics + body) syncs the hidden body field before submit.
 -->
 <div layout:fragment="content">
 
-    <!-- Hidden raw body for Alpine initialisation -->
+    <!-- Hidden raw body read by NoteBlockEditor at DOMContentLoaded time -->
     <div id="note-body-raw" style="display:none;" th:text="${note.body}"></div>
 
-    <div x-data="noteEditor()" x-init="init()" th:data-note-id="${note.id}">
+    <!-- ── Main form — saves title, topics, body ─────────────────────────── -->
+    <form th:action="@{/notes/{id}(id=${note.id})}" method="post" id="note-main-form">
+        <input type="hidden" name="parentType" th:value="${note.primaryParentType.name()}"/>
+        <input type="hidden" name="parentId"   th:value="${note.primaryParentId}"/>
+        <!-- Kept in sync by editor before every autosave and before form submit -->
+        <input type="hidden" name="body" id="note-body-field"/>
 
-        <!-- ── Main form — saves title, topics, body ── -->
-        <form th:action="@{/notes/{id}(id=${note.id})}" method="post" id="note-main-form">
-            <input type="hidden" name="parentType" th:value="${note.primaryParentType.name()}"/>
-            <input type="hidden" name="parentId"   th:value="${note.primaryParentId}"/>
-            <!-- body hidden field kept in sync by Alpine -->
-            <input type="hidden" name="body" :value="rawBody"/>
-
-            <!-- ── Page header ── -->
-            <div class="note-page-header">
-                <div class="d-flex align-center gap-4" style="margin-bottom: 0.75rem;">
-                    <a th:href="${parent.url()}" class="btn btn-secondary btn-sm">&larr; Back</a>
-                </div>
-
-                <!-- Title -->
-                <input type="text" name="title" class="note-title-input"
-                       th:value="${note.title}" placeholder="Note title" required/>
-
-                <!-- Meta row -->
-                <div class="note-meta-row">
-                    <span class="text-muted text-small">
-                        <span th:text="${parent.type().name().replace('_',' ')}">TYPE</span>
-                        &mdash;
-                        <a th:href="${parent.url()}" th:text="${parent.label()}">Parent</a>
-                    </span>
-                    <span class="text-muted text-small">
-                        Modified <span th:text="${#temporals.format(note.updatedAt,'MMM d, yyyy')}"></span>
-                    </span>
-                    <span x-text="saveStatus" class="text-small" style="font-style:italic; color:var(--gray-400);"></span>
-                </div>
-
-                <!-- Actions -->
-                <div class="d-flex gap-2" style="margin-top: 0.75rem;">
-                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                    <button type="submit"
-                            formaction="/notes/[[${note.id}]]/delete"
-                            class="btn btn-danger btn-sm"
-                            th:attr="data-confirm=${!note.workItemRefs.isEmpty()
-                                ? 'Delete &quot;' + note.title + '&quot;? This will remove ' + note.workItemRefs.size() + ' work item reference(s).'
-                                : 'Delete &quot;' + note.title + '&quot;?'}">
-                        Delete
-                    </button>
-                </div>
+        <!-- ── Page header ── -->
+        <div class="note-page-header">
+            <div class="d-flex align-center gap-4" style="margin-bottom: 0.75rem;">
+                <a th:href="${parent.url()}" class="btn btn-secondary btn-sm">&larr; Back</a>
             </div>
 
-            <!-- ── Topic tags ── -->
-            <div th:replace="~{topics/tag-select-fragment :: topicMultiSelect(${allTopics}, ${note.topicTags.![id]})}"></div>
+            <input type="text" name="title" class="note-title-input"
+                   th:value="${note.title}" placeholder="Note title" required/>
 
-        </form><!-- end note-main-form -->
-
-        <!-- ── Body editor (outside the form, but rawBody is synced via the hidden input) ── -->
-        <div class="note-body-section">
-
-            <!-- Toolbar -->
-            <div class="d-flex align-center" style="justify-content: space-between; margin-bottom: 0.5rem;">
-                <span class="form-label" style="margin:0;">Content</span>
-                <button type="button" class="btn btn-secondary btn-sm"
-                        @click="toggleMode()"
-                        x-text="editing ? 'Preview' : 'Edit'">Edit</button>
+            <div class="note-meta-row">
+                <span class="text-muted text-small">
+                    <span th:text="${parent.type().name().replace('_',' ')}">TYPE</span>
+                    &mdash;
+                    <a th:href="${parent.url()}" th:text="${parent.label()}">Parent</a>
+                </span>
+                <span class="text-muted text-small">
+                    Modified <span th:text="${#temporals.format(note.updatedAt,'MMM d, yyyy')}"></span>
+                </span>
+                <span id="save-status" class="text-small"
+                      style="font-style:italic; color:var(--gray-400);"></span>
             </div>
 
-            <!-- View mode: rendered markdown — click anywhere to edit -->
-            <div x-show="!editing" x-cloak
-                 x-html="renderedBody"
-                 @click="startEditing()"
-                 class="note-view-body markdown-preview"
-                 title="Click to edit"></div>
-
-            <!-- Edit mode: textarea -->
-            <textarea x-show="editing" x-cloak
-                      x-ref="editor"
-                      x-model="rawBody"
-                      @input="onInput()"
-                      class="form-control note-body-textarea"
-                      placeholder="Write in Markdown…"></textarea>
-
+            <div class="d-flex gap-2" style="margin-top: 0.75rem;">
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                <button type="submit" class="btn btn-danger btn-sm"
+                        th:attr="formaction=@{/notes/{id}/delete(id=${note.id})},
+                                 data-confirm='Delete &quot;' + ${note.title} + '&quot;?'">
+                    Delete
+                </button>
+            </div>
         </div>
 
-        <!-- ── Referenced work items (own forms, outside note-main-form) ── -->
-        <div style="margin-top: 2rem;">
-            <div class="section-header">
-                <h2>Referenced Work Items</h2>
-            </div>
+        <!-- ── Topic tags ── -->
+        <div th:replace="~{topics/tag-select-fragment :: topicMultiSelect(${allTopics}, ${note.topicTags.![id]})}"></div>
 
-            <div th:if="${!#sets.isEmpty(note.workItemRefs)}">
-                <div th:each="wi : ${note.workItemRefs}"
-                     class="d-flex align-center gap-4"
-                     style="padding: 0.5rem 0; border-bottom: 1px solid var(--gray-100); flex-wrap: wrap;">
-                    <a th:href="@{/work-items/{id}(id=${wi.id})}"
-                       th:text="${wi.title}" style="flex:1; min-width:0;">Work Item</a>
-                    <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
-                    <form th:action="@{/notes/{nid}/work-items/{wiid}/detach(nid=${note.id},wiid=${wi.id})}"
-                          method="post" style="display:inline; flex-shrink:0;">
-                        <button type="submit" class="btn btn-secondary btn-sm">Detach</button>
-                    </form>
-                </div>
-            </div>
+    </form><!-- end note-main-form -->
 
-            <div th:if="${#sets.isEmpty(note.workItemRefs)}"
-                 class="text-small text-muted" style="font-style:italic; padding: 0.5rem 0;">
-                No work items referenced yet.
-            </div>
+    <!-- ── Block editor (lives outside the form) ─────────────────────────── -->
+    <div class="note-body-section">
+        <div id="note-editor"
+             class="note-editor-container"
+             th:data-note-id="${note.id}"></div>
+    </div>
 
-            <div style="margin-top: 0.75rem;" th:if="${!#lists.isEmpty(availableWorkItems)}">
-                <form th:action="@{/notes/{id}/work-items/attach(id=${note.id})}" method="post"
-                      class="d-flex gap-2" style="flex-wrap: wrap;">
-                    <select name="workItemId" class="form-control" style="max-width: 420px; flex:1;">
-                        <option th:each="wi : ${availableWorkItems}"
-                                th:value="${wi.id}"
-                                th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
-                    </select>
-                    <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0;">Attach</button>
+    <!-- ── Referenced work items ─────────────────────────────────────────── -->
+    <div style="margin-top: 2rem;">
+        <div class="section-header">
+            <h2>Referenced Work Items</h2>
+        </div>
+
+        <div th:if="${!#sets.isEmpty(note.workItemRefs)}">
+            <div th:each="wi : ${note.workItemRefs}"
+                 class="d-flex align-center gap-4"
+                 style="padding: 0.5rem 0; border-bottom: 1px solid var(--gray-100); flex-wrap: wrap;">
+                <a th:href="@{/work-items/{id}(id=${wi.id})}"
+                   th:text="${wi.title}" style="flex:1; min-width:0;">Work Item</a>
+                <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
+                <form th:action="@{/notes/{nid}/work-items/{wiid}/detach(nid=${note.id},wiid=${wi.id})}"
+                      method="post" style="display:inline; flex-shrink:0;">
+                    <button type="submit" class="btn btn-secondary btn-sm">Detach</button>
                 </form>
             </div>
         </div>
 
-    </div><!-- end x-data -->
+        <div th:if="${#sets.isEmpty(note.workItemRefs)}"
+             class="text-small text-muted" style="font-style:italic; padding: 0.5rem 0;">
+            No work items referenced yet.
+        </div>
+
+        <div style="margin-top: 0.75rem;" th:if="${!#lists.isEmpty(availableWorkItems)}">
+            <form th:action="@{/notes/{id}/work-items/attach(id=${note.id})}" method="post"
+                  class="d-flex gap-2" style="flex-wrap: wrap;">
+                <select name="workItemId" class="form-control" style="max-width: 420px; flex:1;">
+                    <option th:each="wi : ${availableWorkItems}"
+                            th:value="${wi.id}"
+                            th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0;">Attach</button>
+            </form>
+        </div>
+    </div>
+
 </div>
 <th:block layout:fragment="scripts">
 <script>
-function noteEditor() {
-    // Alpine evaluates x-data after defer scripts load, so marked and the DOM are ready.
-    const rawEl = document.getElementById('note-body-raw');
-    const initial = rawEl ? rawEl.textContent : '';
+/**
+ * NoteBlockEditor — Notion-like block-based markdown editor.
+ *
+ * Each paragraph of the note is a separate .nb div.
+ * Focused → raw markdown text (monospace).
+ * Blurred  → rendered HTML via marked.parse().
+ * Enter  → new block below.
+ * Backspace on empty block → delete block, focus previous.
+ * Autosaves 300 ms after last keystroke.
+ *
+ * DOMContentLoaded fires AFTER defer scripts (htmx, marked, alpine, sortable),
+ * so marked is guaranteed available when the editor initialises.
+ */
+(function () {
+    'use strict';
 
-    return {
-        rawBody:      initial,
-        editing:      !initial.trim(),   // start in edit mode when the note is empty
-        renderedBody: '',
-        saveStatus:   '',
-        saveTimer:    null,
-        noteId:       null,
+    function NoteBlockEditor(container, markdown, noteId) {
+        this.container  = container;
+        this.noteId     = noteId;
+        this.saveTimer  = null;
+        this.statusEl   = document.getElementById('save-status');
+        this._pendingX  = undefined;
+        this._pendingY  = undefined;
 
-        init() {
-            this.noteId = this.$el.dataset.noteId;
-            this.render();
-        },
+        var self = this;
+        var raw  = (markdown || '').trim();
+        // Split on two or more consecutive newlines (paragraph boundaries)
+        var texts = raw ? raw.split(/\n{2,}/) : [''];
+        texts.forEach(function (t) { self._addBlock(t); });
 
-        render() {
-            if (typeof marked !== 'undefined' && this.rawBody.trim()) {
-                this.renderedBody = marked.parse(this.rawBody);
-            } else {
-                this.renderedBody =
-                    '<p style="color:var(--gray-400);font-style:italic;margin:0;">No content yet — click to start writing.</p>';
-            }
-        },
+        // Sync hidden body field before the main form submits
+        var form = document.getElementById('note-main-form');
+        if (form) {
+            form.addEventListener('submit', function () {
+                var f = document.getElementById('note-body-field');
+                if (f) f.value = self._collectRaw();
+            });
+        }
+    }
 
-        startEditing() {
-            this.editing = true;
-            this.$nextTick(() => this.$refs.editor && this.$refs.editor.focus());
-        },
+    /* ── Block creation ────────────────────────────────────────────────── */
 
-        toggleMode() {
-            if (this.editing) {
-                this.render();
-                this.editing = false;
-            } else {
-                this.startEditing();
-            }
-        },
+    NoteBlockEditor.prototype._addBlock = function (text, afterEl) {
+        var self = this;
+        var div  = document.createElement('div');
+        div.className       = 'nb';
+        div.contentEditable = 'true';
+        div.dataset.raw     = text || '';
 
-        onInput() {
-            clearTimeout(this.saveTimer);
-            this.saveStatus = 'Saving…';
-            this.saveTimer = setTimeout(() => this.doAutosave(), 800);
-        },
+        if (text && text.trim()) {
+            div.innerHTML = marked.parse(text);
+        }
 
-        async doAutosave() {
-            try {
-                const resp = await fetch(`/notes/${this.noteId}/autosave`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'body=' + encodeURIComponent(this.rawBody)
-                });
-                if (resp.ok) {
-                    const html = await resp.text();
-                    const tmp = document.createElement('span');
-                    tmp.innerHTML = html;
-                    this.saveStatus = tmp.textContent.trim();
+        div.addEventListener('mousedown', function (e) {
+            // Record click coords so we can restore cursor after switching to raw text
+            self._pendingX = e.clientX;
+            self._pendingY = e.clientY;
+        });
+        div.addEventListener('focus',   function ()  { self._onFocus(div); });
+        div.addEventListener('blur',    function ()  { self._onBlur(div); });
+        div.addEventListener('keydown', function (e) { self._onKeyDown(e, div); });
+        div.addEventListener('input',   function ()  { self._onInput(div); });
+
+        if (afterEl) {
+            afterEl.insertAdjacentElement('afterend', div);
+        } else {
+            this.container.appendChild(div);
+        }
+        return div;
+    };
+
+    /* ── Focus: switch to raw markdown ────────────────────────────────── */
+
+    NoteBlockEditor.prototype._onFocus = function (div) {
+        div.classList.add('nb-editing');
+        div.textContent = div.dataset.raw || '';   // show raw markdown
+
+        var px = this._pendingX;
+        var py = this._pendingY;
+        this._pendingX = this._pendingY = undefined;
+
+        // Restore cursor near the mouse-click position (or at end for keyboard nav)
+        setTimeout(function () {
+            var range = null;
+            var sel   = window.getSelection();
+
+            if (px !== undefined) {
+                // Mouse click: place caret at the click point
+                if (document.caretPositionFromPoint) {
+                    var pos = document.caretPositionFromPoint(px, py);
+                    if (pos && div.contains(pos.offsetNode)) {
+                        range = document.createRange();
+                        range.setStart(pos.offsetNode, pos.offset);
+                        range.collapse(true);
+                    }
+                } else if (document.caretRangeFromPoint) {
+                    var r = document.caretRangeFromPoint(px, py);
+                    if (r && div.contains(r.startContainer)) range = r;
                 }
-            } catch (_) {
-                this.saveStatus = 'Save failed';
             }
+
+            if (!range) {
+                // Keyboard navigation or fallback: move to end of block
+                range = document.createRange();
+                range.selectNodeContents(div);
+                range.collapse(false);
+            }
+
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }, 0);
+    };
+
+    /* ── Blur: render markdown ─────────────────────────────────────────── */
+
+    NoteBlockEditor.prototype._onBlur = function (div) {
+        div.classList.remove('nb-editing');
+        div.dataset.raw = div.textContent;
+        var raw = div.textContent.trim();
+        div.innerHTML = raw ? marked.parse(raw) : '';
+    };
+
+    /* ── Keydown: Enter = new block, Backspace on empty = delete block ── */
+
+    NoteBlockEditor.prototype._onKeyDown = function (e, div) {
+        var self = this;
+
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            var nb = self._addBlock('', div);
+            nb.focus();
+        } else if (e.key === 'Backspace' && div.textContent === '') {
+            e.preventDefault();
+            // Keep at least one block in the editor
+            if (!div.previousElementSibling && !div.nextElementSibling) return;
+            var prev = div.previousElementSibling;
+            div.remove();
+            if (prev) prev.focus();
         }
     };
-}
+
+    /* ── Input: update dataset.raw and schedule autosave ──────────────── */
+
+    NoteBlockEditor.prototype._onInput = function (div) {
+        div.dataset.raw = div.textContent;
+        this._scheduleAutosave();
+    };
+
+    /* ── Collect all blocks back to markdown ───────────────────────────── */
+
+    NoteBlockEditor.prototype._collectRaw = function () {
+        return Array.from(this.container.querySelectorAll('.nb'))
+            .map(function (b) { return (b.dataset.raw || '').replace(/\s+$/, ''); })
+            .join('\n\n')
+            .trim();
+    };
+
+    /* ── Autosave ───────────────────────────────────────────────────────── */
+
+    NoteBlockEditor.prototype._scheduleAutosave = function () {
+        var self = this;
+        clearTimeout(this.saveTimer);
+        if (this.statusEl) this.statusEl.textContent = 'Saving…';
+        this.saveTimer = setTimeout(function () { self._autosave(); }, 300);
+    };
+
+    NoteBlockEditor.prototype._autosave = function () {
+        var self = this;
+        var body = this._collectRaw();
+
+        // Keep hidden field in sync in case user hits Save right after typing
+        var field = document.getElementById('note-body-field');
+        if (field) field.value = body;
+
+        fetch('/notes/' + this.noteId + '/autosave', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    'body=' + encodeURIComponent(body)
+        })
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+            if (!html || !self.statusEl) return;
+            var tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            self.statusEl.textContent = tmp.textContent.trim();
+        })
+        .catch(function () {
+            if (self.statusEl) self.statusEl.textContent = 'Save failed';
+        });
+    };
+
+    /* ── Bootstrap ─────────────────────────────────────────────────────── */
+
+    // DOMContentLoaded fires after ALL defer scripts (marked, alpine, …) have run,
+    // so marked.parse() is available here.
+    document.addEventListener('DOMContentLoaded', function () {
+        var editorEl = document.getElementById('note-editor');
+        if (!editorEl) return;
+
+        var rawEl    = document.getElementById('note-body-raw');
+        var markdown = rawEl ? rawEl.textContent : '';
+
+        new NoteBlockEditor(editorEl, markdown, editorEl.dataset.noteId);
+    });
+}());
 </script>
 </th:block>
 </body>

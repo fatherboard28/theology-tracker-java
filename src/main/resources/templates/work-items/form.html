@@ -50,6 +50,8 @@
                     <input type="text" id="title" name="title" class="form-control"
                            th:value="${item != null ? item.title : ''}"
                            placeholder="Short descriptive title" required autofocus/>
+                    <span class="form-error" th:if="${fieldErrors != null and fieldErrors['title'] != null}"
+                          th:text="${fieldErrors['title']}"></span>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -80,7 +82,7 @@
                 <!-- Reading-specific -->
                 <div th:if="${formType.name() == 'READING'}">
                     <hr style="margin: 1.25rem 0;"/>
-                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Reading Details</h3>
+                    <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 16px;">Reading Details</h3>
 
                     <div class="form-group">
                         <label class="form-label required" for="source">Source</label>
@@ -118,7 +120,7 @@
                 <!-- Assignment-specific -->
                 <div th:if="${formType.name() == 'ASSIGNMENT'}">
                     <hr style="margin: 1.25rem 0;"/>
-                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Assignment Details</h3>
+                    <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 16px;">Assignment Details</h3>
 
                     <div class="form-group">
                         <label class="form-label" for="description">Description</label>
@@ -131,7 +133,7 @@
                 <!-- Paper-specific -->
                 <div th:if="${formType.name() == 'PAPER'}">
                     <hr style="margin: 1.25rem 0;"/>
-                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Paper Details</h3>
+                    <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 16px;">Paper Details</h3>
 
                     <div class="form-group">
                         <label class="form-label" for="promptOrTopic">Prompt or Topic</label>
@@ -159,7 +161,7 @@
                 <!-- Practice Session-specific -->
                 <div th:if="${formType.name() == 'PRACTICE_SESSION'}">
                     <hr style="margin: 1.25rem 0;"/>
-                    <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem;">Practice Session Details</h3>
+                    <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 16px;">Practice Session Details</h3>
 
                     <div class="form-group">
                         <label class="form-label" for="methodId">Method</label>

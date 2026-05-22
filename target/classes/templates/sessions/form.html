@@ -26,16 +26,12 @@
                         <label class="form-label required" for="sessionDate">Date</label>
                         <input type="date" id="sessionDate" name="sessionDate" class="form-control" required
                                th:value="${session != null and session.sessionDate != null ? session.sessionDate : (preDate != null ? preDate : #temporals.format(#temporals.createNow(), 'yyyy-MM-dd'))}"/>
-                        <span class="form-error" th:if="${fieldErrors != null and fieldErrors['sessionDate'] != null}"
-                              th:text="${fieldErrors['sessionDate']}"></span>
                     </div>
                     <div class="form-group">
                         <label class="form-label required" for="durationMinutes">Duration (minutes)</label>
                         <input type="number" id="durationMinutes" name="durationMinutes" class="form-control"
                                min="1" required
                                th:value="${session != null ? session.durationMinutes : ''}"/>
-                        <span class="form-error" th:if="${fieldErrors != null and fieldErrors['durationMinutes'] != null}"
-                              th:text="${fieldErrors['durationMinutes']}"></span>
                     </div>
                 </div>
 

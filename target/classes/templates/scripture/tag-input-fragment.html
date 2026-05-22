@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Reusable scripture tag input fragment.
+  Parameters:
+    existingTags  — List<ScriptureTag> of already-saved tags (may be null/empty)
+    labelText     — String label (e.g. "Scripture Tags" or "Scripture Tags (optional)")
+-->
+<div th:fragment="scriptureTagInput(existingTags, labelText)" class="form-group">
+    <label class="form-label" th:text="${labelText}">Scripture Tags</label>
+    <div id="scripture-tags-container">
+        <th:block th:if="${existingTags != null and !existingTags.isEmpty()}">
+            <div th:each="tag : ${existingTags}"
+                 class="scripture-tag-row d-flex gap-2 align-center"
+                 style="margin-bottom: 0.5rem;">
+                <input type="text" name="scriptureTags"
+                       class="form-control scripture-ref-input"
+                       th:value="${tag.reference}"
+                       placeholder="e.g. Rom 8:28"
+                       autocomplete="off"/>
+                <span class="scripture-validation-icon" aria-hidden="true"></span>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="removeScriptureTag(this)" title="Remove">✕</button>
+            </div>
+        </th:block>
+        <th:block th:if="${existingTags == null or existingTags.isEmpty()}">
+            <div class="scripture-tag-row d-flex gap-2 align-center" style="margin-bottom: 0.5rem;">
+                <input type="text" name="scriptureTags"
+                       class="form-control scripture-ref-input"
+                       placeholder="e.g. Rom 8:28"
+                       autocomplete="off"/>
+                <span class="scripture-validation-icon" aria-hidden="true"></span>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        onclick="removeScriptureTag(this)" title="Remove">✕</button>
+            </div>
+        </th:block>
+    </div>
+    <div class="form-hint">
+        Format: <code>AAA C:V</code> &mdash; e.g. <code>Rom 8:28</code>, <code>Gen 1:1</code>, <code>Psa 119</code>
+        &mdash; <a th:href="@{/scripture}" target="_blank" tabindex="-1">Browse by reference</a>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem;"
+            onclick="addScriptureTagRow()">+ Add Scripture Tag</button>
+</div>
+
+</body>
+</html>

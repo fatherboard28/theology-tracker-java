@@ -25,7 +25,7 @@
                            placeholder="e.g. Rom 8 or Rom 8:28 or Gen 1:1"
                            autocomplete="off"
                            autofocus/>
-                    <div class="form-hint" style="margin-top: 8px;">
+                    <div class="form-hint" style="margin-top: 0.35rem;">
                         Enter a book + chapter for all verses (e.g. <code>Rom 8</code>),
                         or book + chapter:verse for an exact match (e.g. <code>Rom 8:28</code>).
                     </div>
@@ -39,7 +39,7 @@
     <div th:if="${result != null}">
 
         <div class="section-header" style="margin-bottom: 1rem;">
-            <h2 style="font-size: var(--text-lg);">
+            <h2 style="font-size: 1.1rem;">
                 Results for <code th:text="${result.query}"></code>
             </h2>
         </div>
@@ -51,7 +51,7 @@
 
         <!-- Work Items -->
         <div th:if="${!result.workItems.isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
                 Work Items
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.workItems.size()}"></span>
             </h3>
@@ -83,7 +83,7 @@
 
         <!-- Study Sessions -->
         <div th:if="${!result.sessions.isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
+            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
                 Study Sessions
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.sessions.size()}"></span>
             </h3>
@@ -116,12 +116,12 @@
 
     <!-- Book Reference Guide -->
     <div th:if="${result == null}" style="margin-top: 1.5rem;">
-        <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">
+        <h3 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-muted);">
             Supported Book Abbreviations
         </h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
             <code th:each="abbr : ${bookAbbreviations}"
-                  style="font-size: var(--text-xs); padding: 2px 6px; background: var(--bg-secondary); border-radius: 3px;"
+                  style="font-size: 0.78rem; padding: 0.15rem 0.4rem; background: var(--gray-100); border-radius: 3px;"
                   th:text="${abbr}">
             </code>
         </div>

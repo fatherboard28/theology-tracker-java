@@ -29,6 +29,8 @@
                     <label class="form-label required" for="title">Title</label>
                     <input type="text" id="title" name="title" class="form-control"
                            placeholder="Note title" required autofocus/>
+                    <span class="form-error" th:if="${fieldErrors != null and fieldErrors['title'] != null}"
+                          th:text="${fieldErrors['title']}"></span>
                 </div>
 
                 <div class="d-flex gap-4" style="margin-top: 1rem;">
