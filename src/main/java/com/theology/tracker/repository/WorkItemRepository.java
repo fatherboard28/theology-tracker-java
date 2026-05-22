@@ -25,6 +25,8 @@ public interface WorkItemRepository extends JpaRepository<WorkItem, Long> {
 
     List<WorkItem> findByDueDateBeforeAndStatusNot(LocalDate date, WorkItemStatus status);
 
+    List<WorkItem> findByCompletionDateBetween(LocalDate from, LocalDate to);
+
     @Query("SELECT w FROM WorkItem w WHERE TYPE(w) IN (Assignment, Paper, PracticeSessionItem) ORDER BY w.title")
     List<WorkItem> findReferenceableWorkItems();
 

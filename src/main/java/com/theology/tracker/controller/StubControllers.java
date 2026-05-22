@@ -15,9 +15,6 @@ import org.springframework.ui.Model;
 @Controller
 public class StubControllers {
 
-    @GetMapping("/calendar")
-    public String calendar() { return "calendar/index"; }
-
     @GetMapping("/settings")
     public String settings() { return "settings/index"; }
 

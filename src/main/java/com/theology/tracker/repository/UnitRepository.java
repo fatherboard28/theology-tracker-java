@@ -15,4 +15,6 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     void deleteByCourseId(Long courseId);
 
     List<Unit> findByTargetCompletionBetweenAndActualCompletionIsNull(LocalDate from, LocalDate to);
+
+    List<Unit> findByTargetCompletionBetween(LocalDate from, LocalDate to);
 }

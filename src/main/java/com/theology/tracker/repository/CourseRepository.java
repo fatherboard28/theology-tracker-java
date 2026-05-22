@@ -16,4 +16,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findAllByOrderByCreatedAtDesc();
 
     List<Course> findByTargetCompletionBetweenAndStatusNot(LocalDate from, LocalDate to, CourseStatus status);
+
+    List<Course> findByTargetCompletionBetween(LocalDate from, LocalDate to);
 }

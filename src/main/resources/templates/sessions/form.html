@@ -25,7 +25,7 @@
                     <div class="form-group">
                         <label class="form-label required" for="sessionDate">Date</label>
                         <input type="date" id="sessionDate" name="sessionDate" class="form-control" required
-                               th:value="${session != null and session.sessionDate != null ? session.sessionDate : #temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+                               th:value="${session != null and session.sessionDate != null ? session.sessionDate : (preDate != null ? preDate : #temporals.format(#temporals.createNow(), 'yyyy-MM-dd'))}"/>
                     </div>
                     <div class="form-group">
                         <label class="form-label required" for="durationMinutes">Duration (minutes)</label>

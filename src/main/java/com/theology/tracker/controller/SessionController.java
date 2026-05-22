@@ -44,11 +44,13 @@ public class SessionController {
         @RequestParam(required = false) Long workItemId,
         @RequestParam(required = false) Long methodId,
         @RequestParam(required = false) Long topicId,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate sessionDate,
         Model model
     ) {
         model.addAttribute("preWorkItemId", workItemId);
         model.addAttribute("preMethodId", methodId);
         model.addAttribute("preTopicId", topicId);
+        model.addAttribute("preDate", sessionDate);
         model.addAttribute("allWorkItems", workItemService.findAll());
         model.addAttribute("allMethods", methodService.findAll());
         model.addAttribute("allTopics", topicService.findAllOrdered());
