@@ -104,6 +104,26 @@ public class NoteController {
         return "redirect:/notes/" + id;
     }
 
+    @GetMapping(value = "/{id}/preview", produces = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseBody
+    public String preview(@PathVariable Long id) {
+        Note note = noteService.findById(id);
+        return note.getBody() != null ? note.getBody() : "";
+    }
+
+    @PostMapping("/{id}/star")
+    public String toggleStar(
+        @PathVariable Long id,
+        @RequestParam(required = false) String returnUrl,
+        RedirectAttributes ra
+    ) {
+        noteService.toggleStar(id);
+        if (returnUrl != null && !returnUrl.isBlank()) {
+            return "redirect:" + returnUrl;
+        }
+        return "redirect:/notes/" + id;
+    }
+
     @PostMapping(value = "/{id}/autosave", produces = MediaType.TEXT_HTML_VALUE)
     @ResponseBody
     public String autosave(@PathVariable Long id, @RequestParam(defaultValue = "") String body) {

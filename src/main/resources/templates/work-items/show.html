@@ -7,83 +7,34 @@
 <body>
 <div layout:fragment="content">
 
+    <!-- 1. Title + Due date -->
     <div class="page-header">
         <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
             <a th:href="${backUrl}" class="btn btn-secondary btn-sm">&larr; Back</a>
         </div>
-        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-            <div style="flex: 1; min-width: 0;">
-                <div class="d-flex align-center gap-4" style="margin-bottom: 0.5rem; flex-wrap: wrap;">
-                    <h1 class="page-title" style="margin: 0;" th:text="${item.title}">Work Item</h1>
-                    <span class="badge" th:text="${typeLabel}">READING</span>
-                    <span class="badge"
-                          th:classappend="${item.status.name() == 'COMPLETE' ? 'badge-complete' : (item.status.name() == 'IN_PROGRESS' ? 'badge-active' : '')}"
-                          th:text="${item.status.name().replace('_', ' ')}">NOT STARTED</span>
-                </div>
-                <p class="page-subtitle text-muted text-small" th:if="${item.unit != null}">
-                    In <a th:href="@{/courses/{id}(id=${item.unit.course.id})}"
-                          th:text="${item.unit.course.title}">Course</a>
-                    &rsaquo; <span th:text="${item.unit.title}">Unit</span>
-                </p>
-                <p class="page-subtitle text-muted text-small" th:if="${item.owningTopic != null}">
-                    Owned by <a th:href="@{/topics/{id}(id=${item.owningTopic.id})}"
-                                th:text="${item.owningTopic.title}">Topic</a>
-                </p>
+        <div style="flex: 1; min-width: 0;">
+            <div class="d-flex align-center gap-4" style="margin-bottom: 0.5rem; flex-wrap: wrap;">
+                <h1 class="page-title" style="margin: 0;" th:text="${item.title}">Work Item</h1>
+                <span class="badge" th:text="${typeLabel}">READING</span>
+                <!-- Due date chip -->
+                <span th:if="${item.dueDate != null}"
+                      th:classappend="${item.status.name() != 'COMPLETE' and item.dueDate.isBefore(T(java.time.LocalDate).now()) ? ' badge-danger' : ''}"
+                      class="badge"
+                      th:text="'Due ' + ${#temporals.format(item.dueDate, 'MMM d, yyyy')}">Due May 30</span>
             </div>
-            <div class="d-flex gap-2" style="flex-shrink: 0;">
-                <a th:href="@{/work-items/{id}/edit(id=${item.id})}" class="btn btn-secondary btn-sm">Edit</a>
-                <form th:action="@{/work-items/{id}/delete(id=${item.id})}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm"
-                            th:attr="data-confirm='Delete &quot;' + ${item.title} + '&quot;?'">
-                        Delete
-                    </button>
-                </form>
-            </div>
+            <p class="page-subtitle text-muted text-small" th:if="${item.unit != null}">
+                In <a th:href="@{/courses/{id}(id=${item.unit.course.id})}"
+                      th:text="${item.unit.course.title}">Course</a>
+                &rsaquo; <span th:text="${item.unit.title}">Unit</span>
+            </p>
+            <p class="page-subtitle text-muted text-small" th:if="${item.owningTopic != null}">
+                Owned by <a th:href="@{/topics/{id}(id=${item.owningTopic.id})}"
+                            th:text="${item.owningTopic.title}">Topic</a>
+            </p>
         </div>
     </div>
 
-    <!-- Completion toggle & meta -->
-    <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; align-items: start;">
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Completion</div>
-                    <form th:action="@{/work-items/{id}/complete(id=${item.id})}" method="post">
-                        <input type="hidden" name="returnUrl" th:value="@{/work-items/{id}(id=${item.id})}"/>
-                        <button type="submit"
-                                th:class="${item.status.name() == 'COMPLETE' ? 'btn btn-secondary btn-sm' : 'btn btn-primary btn-sm'}"
-                                th:text="${item.status.name() == 'COMPLETE' ? '✓ Mark Incomplete' : '○ Mark Complete'}">
-                            Mark Complete
-                        </button>
-                    </form>
-                    <div class="text-small text-muted" style="margin-top: 0.5rem;"
-                         th:if="${item.completionDate != null}">
-                        Completed <span th:text="${#temporals.format(item.completionDate, 'MMM d, yyyy')}"></span>
-                    </div>
-                </div>
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Schedule</div>
-                    <div class="text-small" style="line-height: 1.8;">
-                        <span class="text-muted">Est. duration:</span>
-                        <span th:text="${item.estimatedDuration != null ? item.estimatedDuration + ' min' : '—'}"></span><br/>
-                        <span class="text-muted">Due:</span>
-                        <span th:text="${item.dueDate != null ? #temporals.format(item.dueDate, 'MMM d, yyyy') : '—'}"></span>
-                    </div>
-                </div>
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Topic Tags</div>
-                    <div th:if="${!#sets.isEmpty(item.topicTags)}" class="topic-tags-row">
-                        <span th:each="topic : ${item.topicTags}" class="topic-tag topic-tag-sm">
-                            <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
-                        </span>
-                    </div>
-                    <div th:if="${#sets.isEmpty(item.topicTags)}" class="text-small text-muted">None</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Type-specific details -->
+    <!-- 2. Type-specific details -->
     <div class="card" style="margin-bottom: 1.5rem;" th:if="${reading != null}">
         <div class="card-body">
             <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Reading Details</h2>
@@ -104,6 +55,10 @@
                     <div class="form-label text-muted">Location</div>
                     <div th:text="${reading.location != null ? reading.location : '—'}">—</div>
                 </div>
+                <div th:if="${item.estimatedDuration != null}">
+                    <div class="form-label text-muted">Est. Duration</div>
+                    <div th:text="${item.estimatedDuration} + ' min'">—</div>
+                </div>
             </div>
         </div>
     </div>
@@ -113,6 +68,9 @@
             <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Assignment Details</h2>
             <div th:if="${assignment.description != null}" th:text="${assignment.description}"></div>
             <div th:if="${assignment.description == null}" class="text-muted text-small">No description.</div>
+            <div th:if="${item.estimatedDuration != null}" class="text-small text-muted" style="margin-top: 0.75rem;">
+                Est. duration: <span th:text="${item.estimatedDuration} + ' min'"></span>
+            </div>
         </div>
     </div>
 
@@ -131,6 +89,10 @@
                 <div>
                     <div class="form-label text-muted">Score / Grade</div>
                     <div th:text="${paper.scoreOrGrade != null ? paper.scoreOrGrade : '—'}"></div>
+                </div>
+                <div th:if="${item.estimatedDuration != null}">
+                    <div class="form-label text-muted">Est. Duration</div>
+                    <div th:text="${item.estimatedDuration} + ' min'">—</div>
                 </div>
             </div>
         </div>
@@ -152,16 +114,32 @@
                     <div class="form-label text-muted">Scripture Passage</div>
                     <div th:text="${practiceSession.scripturePassage != null ? practiceSession.scripturePassage : '—'}"></div>
                 </div>
+                <div th:if="${item.estimatedDuration != null}">
+                    <div class="form-label text-muted">Est. Duration</div>
+                    <div th:text="${item.estimatedDuration} + ' min'">—</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Referenced Notes (Assignment, Paper, Practice Session only) -->
-    <div class="card" style="margin-bottom: 1.5rem;" th:if="${reading == null}">
+    <!-- General Notes (if present) -->
+    <div class="card" style="margin-bottom: 1.5rem;" th:if="${item.generalNotes != null}">
         <div class="card-body">
-            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 1rem;">Attachments</h2>
-            <div th:if="${!#sets.isEmpty(item.notes)}">
-                <div th:each="note : ${item.notes}"
+            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;">General Notes</h2>
+            <div class="text-small" th:text="${item.generalNotes}"></div>
+        </div>
+    </div>
+
+    <!-- 3. Notes -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-body">
+            <div class="d-flex align-center" style="justify-content: space-between; margin-bottom: 1rem;">
+                <h2 style="font-size: 1rem; font-weight: 600; margin: 0;">Notes</h2>
+                <a th:href="@{/notes/new(parentType='WORK_ITEM',parentId=${item.id})}"
+                   class="btn btn-primary btn-sm">+ New Note</a>
+            </div>
+            <div th:if="${!#lists.isEmpty(allNotes)}">
+                <div th:each="note : ${allNotes}"
                      class="d-flex align-center gap-4"
                      style="padding: 8px 0; border-bottom: 1px solid var(--border);">
                     <a th:href="@{/notes/{id}(id=${note.id})}"
@@ -170,64 +148,100 @@
                           th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
                 </div>
             </div>
-            <div th:if="${#sets.isEmpty(item.notes)}"
+            <div th:if="${#lists.isEmpty(allNotes)}"
                  class="text-small text-muted" style="font-style: italic;">
-                No notes referenced yet.
+                No notes yet. Use the button above to create one.
             </div>
         </div>
     </div>
 
-    <!-- General Notes -->
-    <div class="card" style="margin-bottom: 1.5rem;" th:if="${item.generalNotes != null}">
-        <div class="card-body">
-            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;">Notes</h2>
-            <div class="text-small" th:text="${item.generalNotes}"></div>
+    <!-- 4. Topic tags -->
+    <div th:if="${!#sets.isEmpty(item.topicTags) or !scriptureTags.isEmpty()}"
+         style="margin-bottom: 1.5rem;">
+        <div th:if="${!#sets.isEmpty(item.topicTags)}" class="topic-tags-row" style="margin-bottom: 0.4rem;">
+            <span th:each="topic : ${item.topicTags}" class="topic-tag topic-tag-sm">
+                <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
+            </span>
+        </div>
+        <div th:if="${!scriptureTags.isEmpty()}" class="topic-tags-row">
+            <span th:each="tag : ${scriptureTags}" class="topic-tag topic-tag-sm">
+                <span th:text="${tag.reference}"></span>
+            </span>
         </div>
     </div>
 
-    <!-- Scripture Tags -->
-    <div class="card" style="margin-bottom: 1.5rem;" th:if="${!scriptureTags.isEmpty()}">
-        <div class="card-body">
-            <h2 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.75rem;">Scripture Tags</h2>
-            <div class="topic-tags-row">
-                <span th:each="tag : ${scriptureTags}" class="topic-tag">
-                    <span th:text="${tag.reference}"></span>
-                </span>
-            </div>
+    <!-- 5. Status toggle -->
+    <div style="margin-bottom: 1.5rem; padding: 0.75rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="d-flex align-center gap-4">
+            <form th:action="@{/work-items/{id}/complete(id=${item.id})}" method="post" style="display:inline;">
+                <input type="hidden" name="returnUrl" th:value="@{/work-items/{id}(id=${item.id})}"/>
+                <button type="submit"
+                        th:class="${item.status.name() == 'COMPLETE' ? 'btn btn-secondary btn-sm' : 'btn btn-primary btn-sm'}"
+                        th:text="${item.status.name() == 'COMPLETE' ? '✓ Mark Incomplete' : '○ Mark Complete'}">
+                    Mark Complete
+                </button>
+            </form>
+            <span class="text-small text-muted" th:if="${item.completionDate != null}">
+                Completed <span th:text="${#temporals.format(item.completionDate, 'MMM d, yyyy')}"></span>
+            </span>
+            <span class="badge"
+                  th:classappend="${item.status.name() == 'COMPLETE' ? 'badge-complete' : (item.status.name() == 'IN_PROGRESS' ? 'badge-active' : '')}"
+                  th:text="${item.status.name().replace('_', ' ')}">NOT STARTED</span>
         </div>
     </div>
 
-    <!-- Study Sessions -->
-    <div style="margin-top: 2rem;">
-        <div class="section-header">
-            <h2>Study Sessions</h2>
-            <a th:href="@{/sessions/new(workItemId=${item.id},returnUrl='/work-items/' + ${item.id})}"
-               class="btn btn-primary btn-sm">+ Log Session</a>
-        </div>
+    <!-- 6. Log Session CTA -->
+    <div style="margin-bottom: 1.5rem;">
+        <a th:href="@{/sessions/new(workItemId=${item.id},returnUrl='/work-items/' + ${item.id})}"
+           class="btn btn-primary">+ Log Session</a>
+        <span class="text-small text-muted" style="margin-left: 0.75rem;"
+              th:if="${totalLoggedMinutes > 0}"
+              th:text="${totalLoggedMinutes} + ' min logged total'"></span>
+    </div>
 
-        <div class="empty-state" th:if="${#lists.isEmpty(sessions)}" style="padding: 2rem 0;">
-            <p>No sessions logged for this work item yet.
-                <a th:href="@{/sessions/new(workItemId=${item.id})}">Log a session.</a>
-            </p>
-        </div>
-
-        <div th:if="${!#lists.isEmpty(sessions)}">
-            <div th:each="s : ${sessions}"
-                 class="d-flex align-center gap-4"
-                 style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
-                <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
-                      th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}">Date</span>
-                <span class="text-small text-muted" style="flex-shrink: 0;"
-                      th:text="${s.durationMinutes} + ' min'">0 min</span>
-                <span class="text-small text-muted" style="flex-shrink: 0;"
-                      th:if="${s.method != null}"
-                      th:text="'via ' + ${s.method.name}"></span>
-                <span class="text-small text-muted" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
-                      th:if="${s.reflectionNote != null and !s.reflectionNote.isBlank()}"
-                      th:text="${#strings.abbreviate(s.reflectionNote, 80)}"></span>
-                <a th:href="@{/sessions/{id}(id=${s.id})}"
-                   class="btn btn-secondary btn-sm" style="flex-shrink: 0;">View</a>
+    <!-- Session history (collapsed) -->
+    <details style="margin-bottom: 2rem;">
+        <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.5rem;
+                        font-size: 0.875rem; color: var(--text-secondary); padding: 0.4rem 0;">
+            <span style="font-size: 0.65rem;">&#9656;</span>
+            Session History (<span th:text="${#lists.size(sessions)}">0</span> sessions logged)
+        </summary>
+        <div style="margin-top: 0.5rem;">
+            <div th:if="${#lists.isEmpty(sessions)}"
+                 class="empty-state" style="padding: 1rem 0;">
+                <p class="text-small text-muted">No sessions logged yet.</p>
             </div>
+            <div th:if="${!#lists.isEmpty(sessions)}">
+                <div th:each="s : ${sessions}"
+                     class="d-flex align-center gap-4"
+                     style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                    <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
+                          th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}">Date</span>
+                    <span class="text-small text-muted" style="flex-shrink: 0;"
+                          th:text="${s.durationMinutes} + ' min'">0 min</span>
+                    <span class="text-small text-muted" style="flex-shrink: 0;"
+                          th:if="${s.method != null}"
+                          th:text="'via ' + ${s.method.name}"></span>
+                    <span class="text-small text-muted" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                          th:if="${s.reflectionNote != null and !s.reflectionNote.isBlank()}"
+                          th:text="${#strings.abbreviate(s.reflectionNote, 80)}"></span>
+                    <a th:href="@{/sessions/{id}(id=${s.id})}"
+                       class="btn btn-secondary btn-sm" style="flex-shrink: 0;">View</a>
+                </div>
+            </div>
+        </div>
+    </details>
+
+    <!-- 7. Edit / Delete (bottom) -->
+    <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
+        <div class="d-flex gap-2">
+            <a th:href="@{/work-items/{id}/edit(id=${item.id})}" class="btn btn-secondary btn-sm">Edit</a>
+            <form th:action="@{/work-items/{id}/delete(id=${item.id})}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm"
+                        th:attr="data-confirm='Delete &quot;' + ${item.title} + '&quot;?'">
+                    Delete
+                </button>
+            </form>
         </div>
     </div>
 

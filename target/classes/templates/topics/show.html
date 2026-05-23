@@ -7,8 +7,8 @@
 <body>
 <div layout:fragment="content">
 
-    <!-- Breadcrumb & actions -->
-    <div class="page-header">
+    <!-- Page header -->
+    <div class="page-header" style="margin-bottom: 1rem;">
         <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
             <a th:href="@{/topics}" class="btn btn-secondary btn-sm">&larr; Topics</a>
             <span th:if="${topic.parentTopic != null}" class="text-muted text-small">
@@ -23,6 +23,34 @@
                     <span class="badge" th:text="${topic.type.name().replace('_', ' ')}">TYPE</span>
                 </div>
                 <p class="page-subtitle" th:if="${topic.description}" th:text="${topic.description}"></p>
+                <!-- Stat line -->
+                <p class="text-muted text-small" style="margin: 0.25rem 0 0;">
+                    <span th:text="${completeWorkItems}">0</span>/<span th:text="${totalWorkItems}">0</span> work items complete
+                    &nbsp;&middot;&nbsp;
+                    <span th:text="${totalLoggedMinutes}">0</span> min logged
+                    <span th:if="${topic.parentTopic != null}">
+                        &nbsp;&middot;&nbsp;
+                        under <a th:href="@{/topics/{id}(id=${topic.parentTopic.id})}"
+                                 th:text="${topic.parentTopic.title}">Parent</a>
+                    </span>
+                </p>
+                <!-- Subtopics as chips (root topics only) -->
+                <div th:if="${topic.parentTopic == null and !#lists.isEmpty(topic.subtopics)}"
+                     style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
+                    <span class="text-muted text-small">Subtopics:</span>
+                    <span th:each="sub : ${topic.subtopics}">
+                        <a th:href="@{/topics/{id}(id=${sub.id})}"
+                           th:text="${sub.title}"
+                           class="topic-tag topic-tag-sm" style="text-decoration: none;"></a>
+                    </span>
+                    <a th:href="@{/topics/new(parentTopicId=${topic.id})}"
+                       class="text-muted text-small" style="font-size: 0.75rem;">+ add</a>
+                </div>
+                <div th:if="${topic.parentTopic == null and #lists.isEmpty(topic.subtopics)}"
+                     style="margin-top: 0.35rem;">
+                    <a th:href="@{/topics/new(parentTopicId=${topic.id})}"
+                       class="text-muted text-small" style="font-size: 0.75rem;">+ add subtopic</a>
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <a th:href="@{/topics/{id}/edit(id=${topic.id})}" class="btn btn-secondary btn-sm">Edit</a>
@@ -36,432 +64,384 @@
         </div>
     </div>
 
-    <!-- Summary card -->
-    <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; align-items: start;">
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Work Items</div>
-                    <div class="text-small" style="line-height: 1.8;">
-                        <span th:text="${completeWorkItems}">0</span>
-                        <span class="text-muted"> complete of </span>
-                        <span th:text="${totalWorkItems}">0</span>
-                        <span class="text-muted"> total</span>
-                    </div>
+    <!-- Two-panel notes layout -->
+    <div style="display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; height: 65vh;">
+
+        <!-- Left panel: notes list -->
+        <div style="width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--card-bg);">
+            <!-- New Note button -->
+            <div style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                <a th:href="@{/notes/new(parentType='TOPIC',parentId=${topic.id})}"
+                   class="btn btn-primary btn-sm" style="width: 100%; display: block; text-align: center;">
+                    + New Note
+                </a>
+            </div>
+
+            <!-- Note list -->
+            <div style="flex: 1; overflow-y: auto; padding: 0.5rem 0;">
+                <div th:if="${#lists.isEmpty(allNotes)}"
+                     class="text-muted text-small"
+                     style="font-style: italic; text-align: center; padding: 1.5rem 1rem;">
+                    No notes yet.
                 </div>
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Time Logged</div>
-                    <div class="text-small" th:text="${totalLoggedMinutes} + ' min'">0 min</div>
-                </div>
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Parent Topic</div>
-                    <div th:if="${topic.parentTopic != null}">
-                        <a th:href="@{/topics/{id}(id=${topic.parentTopic.id})}"
-                           th:text="${topic.parentTopic.title}" class="topic-link"></a>
-                    </div>
-                    <div th:if="${topic.parentTopic == null}" class="text-muted text-small">
-                        Root topic &mdash;
-                        <a th:href="@{/topics/{id}/edit(id=${topic.id})}">assign parent</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Subtopics section -->
-    <div th:if="${topic.parentTopic == null}">
-        <div class="section-header">
-            <h2>Subtopics</h2>
-            <a th:href="@{/topics/new(parentTopicId=${topic.id})}" class="btn btn-secondary btn-sm">+ Add Subtopic</a>
-        </div>
-
-        <div class="empty-state" th:if="${#lists.isEmpty(topic.subtopics)}">
-            <p>No subtopics yet.
-                <a th:href="@{/topics/new(parentTopicId=${topic.id})}">Add a subtopic</a>
-                to organize this topic further.
-            </p>
-        </div>
-
-        <div class="topic-list" th:if="${!#lists.isEmpty(topic.subtopics)}">
-            <div class="topic-card" th:each="sub : ${topic.subtopics}">
-                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                    <div style="flex: 1; min-width: 0;">
-                        <div class="d-flex align-center gap-4" style="flex-wrap: wrap;">
-                            <a class="topic-card-title"
-                               th:href="@{/topics/{id}(id=${sub.id})}"
-                               th:text="${sub.title}">Subtopic</a>
-                            <span class="badge"
-                                  th:text="${sub.type.name().replace('_', ' ')}">TYPE</span>
-                        </div>
-                        <p class="text-small text-muted" style="margin: 0.25rem 0 0;"
-                           th:if="${sub.description}" th:text="${sub.description}"></p>
-                    </div>
-                    <div class="d-flex gap-2" style="flex-shrink: 0;">
-                        <a th:href="@{/topics/{id}(id=${sub.id})}" class="btn btn-secondary btn-sm">View</a>
-                        <a th:href="@{/topics/{id}/edit(id=${sub.id})}" class="btn btn-secondary btn-sm">Edit</a>
-                        <form th:action="@{/topics/{id}/delete(id=${sub.id})}" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm"
-                                    th:attr="data-confirm='Delete subtopic &quot;' + ${sub.title} + '&quot;?'">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Owned Work Items (grouped by type) -->
-    <div style="margin-top: 2rem;">
-        <div class="section-header">
-            <h2>Owned Work Items</h2>
-            <div x-data="{ open: false }" style="position: relative;">
-                <button @click="open = !open" type="button" class="btn btn-primary btn-sm">+ Add Work Item</button>
-                <div x-show="open" x-cloak
-                     style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
-                            background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
-                            padding: 0.5rem; min-width: 180px; z-index: 10;">
-                    <a th:href="@{/work-items/new(type='READING',owningTopicId=${topic.id})}"
-                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Reading</a>
-                    <a th:href="@{/work-items/new(type='ASSIGNMENT',owningTopicId=${topic.id})}"
-                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Assignment</a>
-                    <a th:href="@{/work-items/new(type='PAPER',owningTopicId=${topic.id})}"
-                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Paper</a>
-                    <a th:href="@{/work-items/new(type='PRACTICE_SESSION',owningTopicId=${topic.id})}"
-                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Practice Session</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="empty-state" th:if="${#lists.isEmpty(ownedWorkItems)}">
-            <p>No owned work items yet. Use the button above to create one directly under this topic.</p>
-        </div>
-
-        <div th:if="${!#lists.isEmpty(ownedWorkItems)}">
-            <!-- Readings -->
-            <div th:if="${!#lists.isEmpty(ownedReadings)}">
-                <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Readings</div>
-                <div th:each="wi : ${ownedReadings}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
-            </div>
-            <!-- Assignments -->
-            <div th:if="${!#lists.isEmpty(ownedAssignments)}">
-                <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Assignments</div>
-                <div th:each="wi : ${ownedAssignments}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
-            </div>
-            <!-- Papers -->
-            <div th:if="${!#lists.isEmpty(ownedPapers)}">
-                <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Papers</div>
-                <div th:each="wi : ${ownedPapers}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
-            </div>
-            <!-- Practice Sessions -->
-            <div th:if="${!#lists.isEmpty(ownedPractices)}">
-                <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Practice Sessions</div>
-                <div th:each="wi : ${ownedPractices}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tagged Work Items -->
-    <div style="margin-top: 2rem;">
-        <div class="section-header">
-            <h2>Tagged Work Items</h2>
-            <div x-data="{ open: false }" style="position: relative;" th:if="${!#lists.isEmpty(availableWorkItems)}">
-                <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Tag Work Item</button>
-                <div x-show="open" x-cloak
-                     style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
-                            background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
-                            padding: 0.75rem; min-width: 260px; z-index: 10;">
-                    <form th:action="@{/topics/{id}/tag-work-item(id=${topic.id})}" method="post">
-                        <div class="form-group" style="margin-bottom: 0.5rem;">
-                            <select name="workItemId" class="form-control" required>
-                                <option value="">Select a work item…</option>
-                                <option th:each="wi : ${availableWorkItems}"
-                                        th:value="${wi.id}"
-                                        th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Tag</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="empty-state" th:if="${#lists.isEmpty(taggedWorkItems)}">
-            <p>No course/unit work items tagged with this topic yet.</p>
-        </div>
-
-        <div th:if="${!#lists.isEmpty(taggedWorkItems)}">
-            <div th:each="wi : ${taggedWorkItems}"
-                 class="d-flex align-center gap-4"
-                 style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
-                <span th:text="${wi.status.name() == 'COMPLETE' ? '✓' : '○'}"
-                      th:style="${wi.status.name() == 'COMPLETE' ? 'color: var(--text-secondary); flex-shrink: 0;' : 'flex-shrink: 0;'}">○</span>
-                <a th:href="@{/work-items/{id}(id=${wi.id})}"
-                   th:text="${wi.title}"
-                   th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-secondary); flex: 1;' : 'flex: 1;'}">Work Item</a>
-                <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
-                <span class="text-small text-muted" th:if="${wi.unit != null}"
-                      th:text="${wi.unit.course.title + ' › ' + wi.unit.title}"></span>
-                <span class="text-small text-muted" th:if="${wi.dueDate != null}"
-                      th:text="'Due ' + ${#temporals.format(wi.dueDate, 'MMM d')}"></span>
-                <form th:action="@{/topics/{tid}/untag-work-item/{wid}(tid=${topic.id},wid=${wi.id})}"
-                      method="post" style="display:inline; flex-shrink: 0;">
-                    <button type="submit" class="btn btn-secondary btn-sm"
-                            th:attr="data-confirm='Remove this topic tag from &quot;' + ${wi.title} + '&quot;?'">
-                        Untag
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tagged Courses & Units -->
-    <div style="margin-top: 2rem;">
-        <div class="section-header">
-            <h2>Tagged Courses &amp; Units</h2>
-        </div>
-
-        <!-- Tagged Courses -->
-        <div style="margin-bottom: 1.25rem;">
-            <div class="d-flex align-center" style="justify-content: space-between; margin-bottom: 0.5rem;">
-                <div class="text-small text-muted" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Courses</div>
-                <div x-data="{ open: false }" style="position: relative;" th:if="${!#lists.isEmpty(availableCourses)}">
-                    <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Tag Course</button>
-                    <div x-show="open" x-cloak
-                         style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
-                                background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
-                                padding: 0.75rem; min-width: 260px; z-index: 10;">
-                        <form th:action="@{/topics/{id}/tag-course(id=${topic.id})}" method="post">
-                            <div class="form-group" style="margin-bottom: 0.5rem;">
-                                <select name="courseId" class="form-control" required>
-                                    <option value="">Select a course…</option>
-                                    <option th:each="c : ${availableCourses}"
-                                            th:value="${c.id}"
-                                            th:text="${c.title}">Course</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Tag</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-small text-muted" style="font-style: italic; padding: 0.5rem 0;"
-                 th:if="${#lists.isEmpty(taggedCourses)}">No courses tagged with this topic.</div>
-
-            <div th:if="${!#lists.isEmpty(taggedCourses)}">
-                <div th:each="c : ${taggedCourses}"
-                     class="d-flex align-center gap-4"
-                     style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
-                    <a th:href="@{/courses/{id}(id=${c.id})}"
-                       th:text="${c.title}" style="flex: 1; font-weight: 500;">Course</a>
-                    <span class="badge"
-                          th:classappend="${c.status.name() == 'ACTIVE' ? 'badge-active' : (c.status.name() == 'PAUSED' ? 'badge-paused' : 'badge-complete')}"
-                          th:text="${c.status}">ACTIVE</span>
-                    <form th:action="@{/topics/{tid}/untag-course/{cid}(tid=${topic.id},cid=${c.id})}"
-                          method="post" style="display:inline; flex-shrink: 0;">
-                        <button type="submit" class="btn btn-secondary btn-sm"
-                                th:attr="data-confirm='Remove this topic tag from &quot;' + ${c.title} + '&quot;?'">
-                            Untag
+                <div th:each="note : ${allNotes}"
+                     class="note-row"
+                     th:data-id="${note.id}"
+                     th:data-title="${note.title}"
+                     th:data-updated="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"
+                     onclick="loadNotePreview(this)"
+                     style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border);">
+                    <!-- Star button -->
+                    <form th:action="@{/notes/{id}/star(id=${note.id})}" method="post"
+                          style="display:inline; flex-shrink: 0;" onclick="event.stopPropagation()">
+                        <input type="hidden" name="returnUrl" th:value="@{/topics/{id}(id=${topic.id})}"/>
+                        <button type="submit"
+                                th:title="${note.starred} ? 'Unstar' : 'Star'"
+                                style="background: none; border: none; cursor: pointer; padding: 0; font-size: 1rem; line-height: 1; color: var(--text-secondary);">
+                            <span th:text="${note.starred} ? '★' : '☆'">☆</span>
                         </button>
                     </form>
+                    <!-- Note info -->
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 500; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                             th:text="${note.title}">Note Title</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                            <span th:text="${#temporals.format(note.updatedAt, 'MMM d')}"></span>
+                            <span th:if="${taggedOnlyNoteIds.contains(note.id)}"
+                                  style="font-style: italic;"> · tagged</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Tagged Units -->
-        <div>
-            <div class="d-flex align-center" style="justify-content: space-between; margin-bottom: 0.5rem;">
-                <div class="text-small text-muted" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Units</div>
-                <div x-data="{ open: false }" style="position: relative;" th:if="${!#lists.isEmpty(availableUnits)}">
-                    <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Tag Unit</button>
+                <!-- Tag Note dropdown -->
+                <div th:if="${!#lists.isEmpty(availableNotes)}"
+                     x-data="{ open: false }"
+                     style="padding: 0.5rem 0.75rem; position: relative;">
+                    <button @click="open = !open" type="button"
+                            class="btn btn-secondary btn-sm"
+                            style="width: 100%; font-size: 0.75rem;">+ Tag existing note</button>
                     <div x-show="open" x-cloak
-                         style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
+                         style="display: none; position: absolute; left: 0.75rem; right: 0.75rem; top: 100%;
                                 background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
-                                padding: 0.75rem; min-width: 260px; z-index: 10;">
-                        <form th:action="@{/topics/{id}/tag-unit(id=${topic.id})}" method="post">
-                            <div class="form-group" style="margin-bottom: 0.5rem;">
-                                <select name="unitId" class="form-control" required>
-                                    <option value="">Select a unit…</option>
-                                    <option th:each="u : ${availableUnits}"
-                                            th:value="${u.id}"
-                                            th:text="${u.course.title + ' › ' + u.title}">Unit</option>
+                                padding: 0.5rem; z-index: 20;">
+                        <form th:action="@{/topics/{id}/tag-note(id=${topic.id})}" method="post">
+                            <div class="form-group" style="margin-bottom: 0.4rem;">
+                                <select name="noteId" class="form-control" required style="font-size: 0.8rem;">
+                                    <option value="">Select a note…</option>
+                                    <option th:each="n : ${availableNotes}"
+                                            th:value="${n.id}"
+                                            th:text="${n.title}">Note</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Tag</button>
+                            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; font-size: 0.8rem;">Tag</button>
                         </form>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="text-small text-muted" style="font-style: italic; padding: 0.5rem 0;"
-                 th:if="${#lists.isEmpty(taggedUnits)}">No units tagged with this topic.</div>
-
-            <div th:if="${!#lists.isEmpty(taggedUnits)}">
-                <div th:each="u : ${taggedUnits}"
-                     class="d-flex align-center gap-4"
-                     style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
-                    <div style="flex: 1;">
-                        <a th:href="@{/courses/{id}(id=${u.course.id})}"
-                           style="font-weight: 500;" th:text="${u.title}">Unit</a>
-                        <span class="text-small text-muted"
-                              th:text="' — ' + ${u.course.title}"></span>
-                    </div>
-                    <span class="badge badge-complete" th:if="${u.actualCompletion != null}">Complete</span>
-                    <form th:action="@{/topics/{tid}/untag-unit/{uid}(tid=${topic.id},uid=${u.id})}"
-                          method="post" style="display:inline; flex-shrink: 0;">
-                        <button type="submit" class="btn btn-secondary btn-sm"
-                                th:attr="data-confirm='Remove this topic tag from &quot;' + ${u.title} + '&quot;?'">
-                            Untag
-                        </button>
-                    </form>
+        <!-- Right panel: note preview -->
+        <div id="note-empty-panel"
+             style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); background: var(--bg);">
+            <div style="text-align: center;">
+                <p class="text-muted">Select a note to preview it</p>
+            </div>
+        </div>
+        <div id="note-preview-panel"
+             style="flex: 1; overflow-y: auto; padding: 1.5rem; display: none; background: var(--bg);">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; gap: 1rem;">
+                <div style="min-width: 0;">
+                    <h2 id="preview-title" style="font-size: 1.15rem; font-weight: 600; margin: 0;"></h2>
+                    <div id="preview-date" class="text-muted text-small" style="margin-top: 0.2rem;"></div>
+                </div>
+                <div class="d-flex gap-2" style="flex-shrink: 0;">
+                    <a id="preview-open" href="#" class="btn btn-secondary btn-sm">Open</a>
+                    <a id="preview-untag" href="#" class="btn btn-secondary btn-sm" style="display:none;">Untag</a>
                 </div>
             </div>
+            <div id="preview-body" style="line-height: 1.7; font-size: 0.9rem;"></div>
         </div>
     </div>
 
-    <!-- Owned Notes -->
-    <div style="margin-top: 2rem;">
-        <div class="section-header">
-            <h2>Owned Notes</h2>
-            <a th:href="@{/notes/new(parentType='TOPIC',parentId=${topic.id})}"
-               class="btn btn-primary btn-sm">+ Add Note</a>
-        </div>
+    <!-- Secondary sections (collapsed) -->
+    <details style="margin-top: 1.5rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; list-style: none; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1rem;">&#9656;</span>
+            Work Items &amp; More
+            <span class="text-muted text-small" style="font-weight: 400;">
+                (<span th:text="${totalWorkItems}">0</span> work items,
+                <span th:text="${#lists.size(taggedCourses)}">0</span> courses,
+                <span th:text="${#lists.size(sessions)}">0</span> sessions)
+            </span>
+        </summary>
 
-        <div class="empty-state" th:if="${#lists.isEmpty(ownedNotes)}" style="padding: 2rem 0;">
-            <p>No notes yet.
-                <a th:href="@{/notes/new(parentType='TOPIC',parentId=${topic.id})}">Add a note</a>
-                to this topic.
-            </p>
-        </div>
-
-        <div class="note-list" th:if="${!#lists.isEmpty(ownedNotes)}">
-            <div class="note-card" th:each="note : ${ownedNotes}">
-                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                    <div style="flex: 1; min-width: 0;">
-                        <div class="d-flex align-center gap-4" style="margin-bottom: 0.25rem; flex-wrap: wrap;">
-                            <a class="note-card-title"
-                               th:href="@{/notes/{id}(id=${note.id})}"
-                               th:text="${note.title}">Note</a>
-                            <span class="text-small text-muted"
-                                  th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
-                        </div>
-                        <div class="note-preview"
-                             th:if="${note.body != null and !note.body.isBlank()}"
-                             th:text="${#strings.abbreviate(note.body, 120)}"></div>
-                        <div th:if="${!#sets.isEmpty(note.topicTags)}"
-                             class="topic-tags-row" style="margin-top: 0.3rem;">
-                            <span th:each="t : ${note.topicTags}" class="topic-tag topic-tag-sm">
-                                <a th:href="@{/topics/{id}(id=${t.id})}" th:text="${t.title}">Topic</a>
-                            </span>
+        <div style="margin-top: 1rem;">
+            <!-- Owned Work Items -->
+            <div style="margin-bottom: 2rem;">
+                <div class="section-header">
+                    <h2>Owned Work Items</h2>
+                    <div x-data="{ open: false }" style="position: relative;">
+                        <button @click="open = !open" type="button" class="btn btn-primary btn-sm">+ Add Work Item</button>
+                        <div x-show="open" x-cloak
+                             style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
+                                    background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+                                    padding: 0.5rem; min-width: 180px; z-index: 10;">
+                            <a th:href="@{/work-items/new(type='READING',owningTopicId=${topic.id})}"
+                               style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Reading</a>
+                            <a th:href="@{/work-items/new(type='ASSIGNMENT',owningTopicId=${topic.id})}"
+                               style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Assignment</a>
+                            <a th:href="@{/work-items/new(type='PAPER',owningTopicId=${topic.id})}"
+                               style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Paper</a>
+                            <a th:href="@{/work-items/new(type='PRACTICE_SESSION',owningTopicId=${topic.id})}"
+                               style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Practice Session</a>
                         </div>
                     </div>
-                    <a th:href="@{/notes/{id}(id=${note.id})}"
-                       class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Open</a>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tagged Notes -->
-    <div style="margin-top: 2rem;">
-        <div class="section-header">
-            <h2>Tagged Notes</h2>
-            <div x-data="{ open: false }" style="position: relative;" th:if="${!#lists.isEmpty(availableNotes)}">
-                <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Tag Note</button>
-                <div x-show="open" x-cloak
-                     style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
-                            background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
-                            padding: 0.75rem; min-width: 280px; z-index: 10;">
-                    <form th:action="@{/topics/{id}/tag-note(id=${topic.id})}" method="post">
-                        <div class="form-group" style="margin-bottom: 0.5rem;">
-                            <select name="noteId" class="form-control" required>
-                                <option value="">Select a note…</option>
-                                <option th:each="n : ${availableNotes}"
-                                        th:value="${n.id}"
-                                        th:text="${n.title}">Note</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Tag</button>
-                    </form>
+                <div class="empty-state" th:if="${#lists.isEmpty(ownedWorkItems)}">
+                    <p>No owned work items yet.</p>
                 </div>
-            </div>
-        </div>
-
-        <div class="empty-state" th:if="${#lists.isEmpty(taggedNotes)}" style="padding: 2rem 0;">
-            <p>No notes tagged with this topic yet.</p>
-        </div>
-
-        <div class="note-list" th:if="${!#lists.isEmpty(taggedNotes)}">
-            <div class="note-card" th:each="note : ${taggedNotes}">
-                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                    <div style="flex: 1; min-width: 0;">
-                        <div class="d-flex align-center gap-4" style="margin-bottom: 0.25rem; flex-wrap: wrap;">
-                            <a class="note-card-title"
-                               th:href="@{/notes/{id}(id=${note.id})}"
-                               th:text="${note.title}">Note</a>
-                            <span class="text-small text-muted"
-                                  th:text="${note.primaryParentType.name().toLowerCase() + ' note'}"></span>
-                            <span class="text-small text-muted"
-                                  th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
-                        </div>
-                        <div class="note-preview"
-                             th:if="${note.body != null and !note.body.isBlank()}"
-                             th:text="${#strings.abbreviate(note.body, 120)}"></div>
+                <div th:if="${!#lists.isEmpty(ownedWorkItems)}">
+                    <div th:if="${!#lists.isEmpty(ownedReadings)}">
+                        <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Readings</div>
+                        <div th:each="wi : ${ownedReadings}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
                     </div>
-                    <div class="d-flex gap-2" style="flex-shrink: 0;">
-                        <a th:href="@{/notes/{id}(id=${note.id})}"
-                           class="btn btn-secondary btn-sm">Open</a>
-                        <form th:action="@{/topics/{tid}/untag-note/{nid}(tid=${topic.id},nid=${note.id})}"
-                              method="post" style="display:inline;">
+                    <div th:if="${!#lists.isEmpty(ownedAssignments)}">
+                        <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Assignments</div>
+                        <div th:each="wi : ${ownedAssignments}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
+                    </div>
+                    <div th:if="${!#lists.isEmpty(ownedPapers)}">
+                        <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Papers</div>
+                        <div th:each="wi : ${ownedPapers}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
+                    </div>
+                    <div th:if="${!#lists.isEmpty(ownedPractices)}">
+                        <div class="text-small text-muted" style="font-weight: 600; padding: 0.5rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em;">Practice Sessions</div>
+                        <div th:each="wi : ${ownedPractices}" th:insert="~{topics/show :: workItemRow(${wi}, ${topic.id})}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tagged Work Items -->
+            <div style="margin-bottom: 2rem;">
+                <div class="section-header">
+                    <h2>Tagged Work Items</h2>
+                    <div x-data="{ open: false }" style="position: relative;" th:if="${!#lists.isEmpty(availableWorkItems)}">
+                        <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Tag Work Item</button>
+                        <div x-show="open" x-cloak
+                             style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
+                                    background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+                                    padding: 0.75rem; min-width: 260px; z-index: 10;">
+                            <form th:action="@{/topics/{id}/tag-work-item(id=${topic.id})}" method="post">
+                                <div class="form-group" style="margin-bottom: 0.5rem;">
+                                    <select name="workItemId" class="form-control" required>
+                                        <option value="">Select a work item…</option>
+                                        <option th:each="wi : ${availableWorkItems}"
+                                                th:value="${wi.id}"
+                                                th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Tag</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="empty-state" th:if="${#lists.isEmpty(taggedWorkItems)}">
+                    <p>No course/unit work items tagged with this topic yet.</p>
+                </div>
+                <div th:if="${!#lists.isEmpty(taggedWorkItems)}">
+                    <div th:each="wi : ${taggedWorkItems}"
+                         class="d-flex align-center gap-4"
+                         style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                        <span th:text="${wi.status.name() == 'COMPLETE' ? '✓' : '○'}"
+                              th:style="${wi.status.name() == 'COMPLETE' ? 'color: var(--text-secondary); flex-shrink: 0;' : 'flex-shrink: 0;'}">○</span>
+                        <a th:href="@{/work-items/{id}(id=${wi.id})}"
+                           th:text="${wi.title}"
+                           th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-secondary); flex: 1;' : 'flex: 1;'}">Work Item</a>
+                        <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
+                        <span class="text-small text-muted" th:if="${wi.unit != null}"
+                              th:text="${wi.unit.course.title + ' › ' + wi.unit.title}"></span>
+                        <span class="text-small text-muted" th:if="${wi.dueDate != null}"
+                              th:text="'Due ' + ${#temporals.format(wi.dueDate, 'MMM d')}"></span>
+                        <form th:action="@{/topics/{tid}/untag-work-item/{wid}(tid=${topic.id},wid=${wi.id})}"
+                              method="post" style="display:inline; flex-shrink: 0;">
                             <button type="submit" class="btn btn-secondary btn-sm"
-                                    th:attr="data-confirm='Remove this topic tag from &quot;' + ${note.title} + '&quot;?'">
+                                    th:attr="data-confirm='Remove this topic tag from &quot;' + ${wi.title} + '&quot;?'">
                                 Untag
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Tagged Sessions -->
-    <div style="margin-top: 2rem;">
-        <div class="section-header">
-            <h2>Tagged Sessions</h2>
-            <a th:href="@{/sessions/new(topicId=${topic.id})}"
-               class="btn btn-primary btn-sm">+ Log Session</a>
-        </div>
+            <!-- Tagged Courses & Units -->
+            <div style="margin-bottom: 2rem;">
+                <div class="section-header">
+                    <h2>Tagged Courses &amp; Units</h2>
+                </div>
 
-        <div class="empty-state" th:if="${#lists.isEmpty(sessions)}" style="padding: 2rem 0;">
-            <p>No sessions tagged with this topic yet.</p>
-        </div>
+                <!-- Tagged Courses -->
+                <div style="margin-bottom: 1.25rem;">
+                    <div class="d-flex align-center" style="justify-content: space-between; margin-bottom: 0.5rem;">
+                        <div class="text-small text-muted" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Courses</div>
+                        <div x-data="{ open: false }" style="position: relative;" th:if="${!#lists.isEmpty(availableCourses)}">
+                            <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Tag Course</button>
+                            <div x-show="open" x-cloak
+                                 style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
+                                        background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+                                        padding: 0.75rem; min-width: 260px; z-index: 10;">
+                                <form th:action="@{/topics/{id}/tag-course(id=${topic.id})}" method="post">
+                                    <div class="form-group" style="margin-bottom: 0.5rem;">
+                                        <select name="courseId" class="form-control" required>
+                                            <option value="">Select a course…</option>
+                                            <option th:each="c : ${availableCourses}"
+                                                    th:value="${c.id}"
+                                                    th:text="${c.title}">Course</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Tag</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-small text-muted" style="font-style: italic; padding: 0.5rem 0;"
+                         th:if="${#lists.isEmpty(taggedCourses)}">No courses tagged with this topic.</div>
+                    <div th:if="${!#lists.isEmpty(taggedCourses)}">
+                        <div th:each="c : ${taggedCourses}"
+                             class="d-flex align-center gap-4"
+                             style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                            <a th:href="@{/courses/{id}(id=${c.id})}"
+                               th:text="${c.title}" style="flex: 1; font-weight: 500;">Course</a>
+                            <span class="badge"
+                                  th:classappend="${c.status.name() == 'ACTIVE' ? 'badge-active' : (c.status.name() == 'PAUSED' ? 'badge-paused' : 'badge-complete')}"
+                                  th:text="${c.status}">ACTIVE</span>
+                            <form th:action="@{/topics/{tid}/untag-course/{cid}(tid=${topic.id},cid=${c.id})}"
+                                  method="post" style="display:inline; flex-shrink: 0;">
+                                <button type="submit" class="btn btn-secondary btn-sm"
+                                        th:attr="data-confirm='Remove this topic tag from &quot;' + ${c.title} + '&quot;?'">
+                                    Untag
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
-        <div th:if="${!#lists.isEmpty(sessions)}">
-            <div th:each="s : ${sessions}"
-                 class="d-flex align-center gap-4"
-                 style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
-                <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
-                      th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}">Date</span>
-                <span class="text-small text-muted" style="flex-shrink: 0;"
-                      th:text="${s.durationMinutes} + ' min'">0 min</span>
-                <span class="text-small text-muted" style="flex-shrink: 0;"
-                      th:if="${s.method != null}"
-                      th:text="'via ' + ${s.method.name}"></span>
-                <span class="text-small text-muted" style="flex: 1; min-width: 0;"
-                      th:if="${s.workItem != null}"
-                      th:text="${s.workItem.title}"></span>
-                <span class="text-small text-muted" style="flex: 1; font-style: italic;"
-                      th:if="${s.workItem == null}">Free-form</span>
-                <a th:href="@{/sessions/{id}(id=${s.id})}"
-                   class="btn btn-secondary btn-sm" style="flex-shrink: 0;">View</a>
+                <!-- Tagged Units -->
+                <div>
+                    <div class="d-flex align-center" style="justify-content: space-between; margin-bottom: 0.5rem;">
+                        <div class="text-small text-muted" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Units</div>
+                        <div x-data="{ open: false }" style="position: relative;" th:if="${!#lists.isEmpty(availableUnits)}">
+                            <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Tag Unit</button>
+                            <div x-show="open" x-cloak
+                                 style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
+                                        background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+                                        padding: 0.75rem; min-width: 260px; z-index: 10;">
+                                <form th:action="@{/topics/{id}/tag-unit(id=${topic.id})}" method="post">
+                                    <div class="form-group" style="margin-bottom: 0.5rem;">
+                                        <select name="unitId" class="form-control" required>
+                                            <option value="">Select a unit…</option>
+                                            <option th:each="u : ${availableUnits}"
+                                                    th:value="${u.id}"
+                                                    th:text="${u.course.title + ' › ' + u.title}">Unit</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Tag</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-small text-muted" style="font-style: italic; padding: 0.5rem 0;"
+                         th:if="${#lists.isEmpty(taggedUnits)}">No units tagged with this topic.</div>
+                    <div th:if="${!#lists.isEmpty(taggedUnits)}">
+                        <div th:each="u : ${taggedUnits}"
+                             class="d-flex align-center gap-4"
+                             style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                            <div style="flex: 1;">
+                                <a th:href="@{/courses/{id}(id=${u.course.id})}"
+                                   style="font-weight: 500;" th:text="${u.title}">Unit</a>
+                                <span class="text-small text-muted"
+                                      th:text="' — ' + ${u.course.title}"></span>
+                            </div>
+                            <span class="badge badge-complete" th:if="${u.actualCompletion != null}">Complete</span>
+                            <form th:action="@{/topics/{tid}/untag-unit/{uid}(tid=${topic.id},uid=${u.id})}"
+                                  method="post" style="display:inline; flex-shrink: 0;">
+                                <button type="submit" class="btn btn-secondary btn-sm"
+                                        th:attr="data-confirm='Remove this topic tag from &quot;' + ${u.title} + '&quot;?'">
+                                    Untag
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tagged Sessions -->
+            <div>
+                <div class="section-header">
+                    <h2>Tagged Sessions</h2>
+                    <a th:href="@{/sessions/new(topicId=${topic.id})}"
+                       class="btn btn-primary btn-sm">+ Log Session</a>
+                </div>
+                <div class="empty-state" th:if="${#lists.isEmpty(sessions)}" style="padding: 2rem 0;">
+                    <p>No sessions tagged with this topic yet.</p>
+                </div>
+                <div th:if="${!#lists.isEmpty(sessions)}">
+                    <div th:each="s : ${sessions}"
+                         class="d-flex align-center gap-4"
+                         style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                        <span class="text-small" style="font-weight: 500; flex-shrink: 0;"
+                              th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}">Date</span>
+                        <span class="text-small text-muted" style="flex-shrink: 0;"
+                              th:text="${s.durationMinutes} + ' min'">0 min</span>
+                        <span class="text-small text-muted" style="flex-shrink: 0;"
+                              th:if="${s.method != null}"
+                              th:text="'via ' + ${s.method.name}"></span>
+                        <span class="text-small text-muted" style="flex: 1; min-width: 0;"
+                              th:if="${s.workItem != null}"
+                              th:text="${s.workItem.title}"></span>
+                        <span class="text-small text-muted" style="flex: 1; font-style: italic;"
+                              th:if="${s.workItem == null}">Free-form</span>
+                        <a th:href="@{/sessions/{id}(id=${s.id})}"
+                           class="btn btn-secondary btn-sm" style="flex-shrink: 0;">View</a>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </details>
 
 </div>
 
-<!-- Fragment: work item row (used for owned work items) -->
+<!-- Note preview JavaScript -->
+<script th:inline="none">
+(function() {
+    function loadNotePreview(row) {
+        var noteId = row.dataset.id;
+        var noteTitle = row.dataset.title;
+        var noteUpdated = row.dataset.updated;
+
+        document.querySelectorAll('.note-row').forEach(function(r) {
+            r.style.background = '';
+        });
+        row.style.background = 'var(--border)';
+
+        fetch('/notes/' + noteId + '/preview')
+            .then(function(r) { return r.text(); })
+            .then(function(body) {
+                document.getElementById('preview-title').textContent = noteTitle;
+                document.getElementById('preview-date').textContent = noteUpdated;
+                var bodyEl = document.getElementById('preview-body');
+                bodyEl.innerHTML = (body && window.marked)
+                    ? window.marked.parse(body)
+                    : (body ? body.replace(/\n/g, '<br>') : '');
+                document.getElementById('preview-open').href = '/notes/' + noteId;
+                document.getElementById('note-empty-panel').style.display = 'none';
+                document.getElementById('note-preview-panel').style.display = 'block';
+            });
+    }
+    window.loadNotePreview = loadNotePreview;
+})();
+</script>
+
+<!-- Fragment: work item row -->
 <div th:fragment="workItemRow(wi, topicId)"
      class="d-flex align-center gap-4"
      style="padding: 0.6rem 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;">

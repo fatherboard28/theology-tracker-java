@@ -82,6 +82,11 @@ public class NoteService {
                 yield new ParentInfo(type, id, m.getName(), "/methods/" + id);
             }
             case SESSION -> new ParentInfo(type, id, "Study Session #" + id, "/sessions/" + id);
+            case WORK_ITEM -> {
+                WorkItem wi = workItemRepo.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Work item not found: " + id));
+                yield new ParentInfo(type, id, wi.getTitle(), "/work-items/" + id);
+            }
         };
     }
 
@@ -141,6 +146,12 @@ public class NoteService {
             throw new IllegalArgumentException("Readings cannot be referenced from notes.");
         }
         note.getWorkItemRefs().add(item);
+        return noteRepo.save(note);
+    }
+
+    public Note toggleStar(Long id) {
+        Note note = findById(id);
+        note.setStarred(!note.isStarred());
         return noteRepo.save(note);
     }
 

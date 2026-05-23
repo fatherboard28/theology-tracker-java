@@ -33,6 +33,9 @@ public class Note {
     @Column(nullable = false)
     private Long primaryParentId;
 
+    @Column(nullable = false)
+    private boolean starred = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

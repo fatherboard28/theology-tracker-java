@@ -3,6 +3,7 @@ package com.theology.tracker.controller;
 import com.theology.tracker.dto.WorkItemFormDto;
 import com.theology.tracker.model.*;
 import com.theology.tracker.service.MethodService;
+import com.theology.tracker.service.NoteService;
 import com.theology.tracker.service.ProgressService;
 import com.theology.tracker.service.StudySessionService;
 import com.theology.tracker.service.TopicService;
@@ -15,7 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/work-items")
@@ -27,6 +32,7 @@ public class WorkItemController {
     private final MethodService methodService;
     private final StudySessionService sessionService;
     private final ProgressService progressService;
+    private final NoteService noteService;
 
     public WorkItemController(
         WorkItemService workItemService,
@@ -34,7 +40,8 @@ public class WorkItemController {
         UnitService unitService,
         MethodService methodService,
         StudySessionService sessionService,
-        ProgressService progressService
+        ProgressService progressService,
+        NoteService noteService
     ) {
         this.workItemService = workItemService;
         this.topicService = topicService;
@@ -42,6 +49,7 @@ public class WorkItemController {
         this.methodService = methodService;
         this.sessionService = sessionService;
         this.progressService = progressService;
+        this.noteService = noteService;
     }
 
     @GetMapping("/new")
@@ -113,7 +121,18 @@ public class WorkItemController {
     @GetMapping("/{id}")
     public String show(@PathVariable Long id, Model model) {
         WorkItem item = workItemService.findById(id);
+
+        List<Note> ownedNotes = noteService.findByParent(NoteParentType.WORK_ITEM, id);
+        Set<Long> ownedNoteIds = ownedNotes.stream().map(Note::getId).collect(Collectors.toSet());
+        List<Note> allNotes = new ArrayList<>(ownedNotes);
+        item.getNotes().stream()
+            .filter(n -> !ownedNoteIds.contains(n.getId()))
+            .sorted(Comparator.comparing(Note::getUpdatedAt).reversed())
+            .forEach(allNotes::add);
+        allNotes.sort(Comparator.comparing(Note::getUpdatedAt).reversed());
+
         model.addAttribute("item", item);
+        model.addAttribute("allNotes", allNotes);
         model.addAttribute("scriptureTags", workItemService.findScriptureTagsForWorkItem(id));
         model.addAttribute("sessions", sessionService.findByWorkItem(id));
         model.addAttribute("totalLoggedMinutes", progressService.totalMinutesForWorkItem(id));

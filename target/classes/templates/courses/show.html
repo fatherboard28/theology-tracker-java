@@ -7,23 +7,80 @@
 <body>
 <div layout:fragment="content">
 
-    <!-- Breadcrumb & actions -->
-    <div class="page-header">
+    <!-- Page header -->
+    <div class="page-header" style="margin-bottom: 1.5rem;">
         <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
             <a th:href="@{/courses}" class="btn btn-secondary btn-sm">&larr; Courses</a>
         </div>
-        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;">
             <div style="flex: 1; min-width: 0;">
-                <div class="d-flex align-center gap-4" style="margin-bottom: 0.5rem;">
+                <div class="d-flex align-center gap-4" style="margin-bottom: 0.4rem; flex-wrap: wrap;">
                     <h1 class="page-title" style="margin: 0;" th:text="${course.title}">Course Title</h1>
                     <span class="badge"
                           th:classappend="${course.status.name() == 'ACTIVE' ? 'badge-active' : (course.status.name() == 'PAUSED' ? 'badge-paused' : 'badge-complete')}"
                           th:text="${course.status}">ACTIVE</span>
                 </div>
                 <p class="page-subtitle" th:if="${course.description}" th:text="${course.description}"></p>
+
+                <!-- Topic tags inline -->
+                <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
+                    <span th:if="${!#sets.isEmpty(course.topics)}" class="topic-tags-row" style="margin: 0; display: contents;">
+                        <span th:each="topic : ${course.topics}" class="topic-tag topic-tag-sm">
+                            <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
+                        </span>
+                    </span>
+                    <span th:if="${#sets.isEmpty(course.topics)}" class="text-muted text-small" style="font-style: italic;">no topics</span>
+                    <a th:href="@{/courses/{id}/edit(id=${course.id})}"
+                       class="text-muted text-small" style="font-size: 0.75rem;">edit tags</a>
+                </div>
+
+                <!-- Date line -->
+                <p class="text-muted text-small" style="margin: 0.4rem 0 0;"
+                   th:if="${course.startDate != null or course.targetCompletion != null}">
+                    <span th:if="${course.startDate != null}">
+                        Started <span th:text="${#temporals.format(course.startDate, 'MMM d, yyyy')}"></span>
+                    </span>
+                    <span th:if="${course.startDate != null and course.targetCompletion != null}"> &middot; </span>
+                    <span th:if="${course.targetCompletion != null}">
+                        Target <span th:text="${#temporals.format(course.targetCompletion, 'MMM d, yyyy')}"></span>
+                    </span>
+                    <span th:if="${course.actualCompletion != null}">
+                        &middot; Completed <span th:text="${#temporals.format(course.actualCompletion, 'MMM d, yyyy')}"></span>
+                    </span>
+                </p>
+
+                <!-- Progress bar -->
+                <div style="margin-top: 0.6rem; max-width: 360px;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" th:style="'width: ' + ${progress} + '%'"></div>
+                    </div>
+                    <div class="text-small text-muted" style="margin-top: 0.2rem;">
+                        <span th:text="${progress}">0</span>% of work items complete
+                    </div>
+                </div>
             </div>
-            <div class="d-flex gap-2">
+
+            <div class="d-flex gap-2" style="flex-shrink: 0;">
                 <a th:href="@{/courses/{id}/edit(id=${course.id})}" class="btn btn-secondary btn-sm">Edit</a>
+                <!-- Status dropdown -->
+                <div x-data="{ open: false }" style="position: relative;">
+                    <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">Status &#9660;</button>
+                    <div x-show="open" x-cloak
+                         style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
+                                background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+                                padding: 0.5rem; min-width: 150px; z-index: 10;">
+                        <form th:each="s : ${statuses}"
+                              th:if="${course.status != s}"
+                              th:action="@{/courses/{id}/status(id=${course.id})}"
+                              method="post" style="display:block; margin: 0;">
+                            <input type="hidden" name="status" th:value="${s.name()}"/>
+                            <button type="submit"
+                                    class="btn btn-secondary btn-sm"
+                                    style="width: 100%; text-align: left; margin-bottom: 0.2rem;"
+                                    th:text="'→ ' + ${s}">→ ACTIVE</button>
+                        </form>
+                    </div>
+                </div>
                 <form th:action="@{/courses/{id}/delete(id=${course.id})}" method="post" style="display:inline;">
                     <button type="submit" class="btn btn-danger btn-sm"
                             th:attr="data-confirm='Delete course &quot;' + ${course.title} + '&quot;? This will also delete all its units and work items.'">
@@ -31,68 +88,6 @@
                     </button>
                 </form>
             </div>
-        </div>
-    </div>
-
-    <!-- Progress & meta -->
-    <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; align-items: start;">
-                <!-- Progress -->
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Progress</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" th:style="'width: ' + ${progress} + '%'"></div>
-                    </div>
-                    <div class="text-small text-muted" style="margin-top: 0.25rem;">
-                        <span th:text="${progress}">0</span>% of work items complete
-                    </div>
-                </div>
-                <!-- Dates -->
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Dates</div>
-                    <div class="text-small" style="line-height: 1.8;">
-                        <span class="text-muted">Started:</span>
-                        <span th:text="${course.startDate != null ? #temporals.format(course.startDate, 'MMM d, yyyy') : '—'}"></span><br/>
-                        <span class="text-muted">Target:</span>
-                        <span th:text="${course.targetCompletion != null ? #temporals.format(course.targetCompletion, 'MMM d, yyyy') : '—'}"></span><br/>
-                        <span class="text-muted" th:if="${course.actualCompletion != null}">Completed:</span>
-                        <span th:if="${course.actualCompletion != null}"
-                              th:text="${#temporals.format(course.actualCompletion, 'MMM d, yyyy')}"></span>
-                    </div>
-                </div>
-                <!-- Status transitions -->
-                <div>
-                    <div class="form-label" style="margin-bottom: 0.5rem;">Change Status</div>
-                    <div class="d-flex gap-2" style="flex-wrap: wrap;">
-                        <form th:each="s : ${statuses}"
-                              th:if="${course.status != s}"
-                              th:action="@{/courses/{id}/status(id=${course.id})}"
-                              method="post" style="display:inline;">
-                            <input type="hidden" name="status" th:value="${s.name()}"/>
-                            <button type="submit" class="btn btn-secondary btn-sm"
-                                    th:text="'→ ' + ${s}">→ ACTIVE</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Topic Tags section -->
-    <div class="section-header" style="margin-top: 1.5rem;">
-        <h2>Topic Tags</h2>
-        <a th:href="@{/courses/{id}/edit(id=${course.id})}" class="btn btn-secondary btn-sm">Manage Tags</a>
-    </div>
-
-    <div style="margin-bottom: 1.5rem;">
-        <div th:if="${!#sets.isEmpty(course.topics)}" class="topic-tags-row">
-            <span th:each="topic : ${course.topics}" class="topic-tag">
-                <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
-            </span>
-        </div>
-        <div th:if="${#sets.isEmpty(course.topics)}" class="text-muted text-small" style="font-style: italic;">
-            No topic tags. <a th:href="@{/courses/{id}/edit(id=${course.id})}">Edit this course</a> to add tags.
         </div>
     </div>
 
@@ -112,6 +107,8 @@
             style="list-style: none; padding: 0; margin: 0;">
             <li class="unit-item"
                 th:each="unit, iter : ${units}"
+                th:with="unitComplete=${#lists.size(unit.workItems.?[status.name() == 'COMPLETE'])}"
+                x-data="{ open: false }"
                 th:data-id="${unit.id}">
                 <div class="unit-drag-handle drag-handle" title="Drag to reorder">
                     <span>&#8597;</span>
@@ -157,48 +154,57 @@
                         </div>
                     </div>
 
-                    <!-- Work items in this unit -->
-                    <div style="margin-top: 0.75rem; margin-left: 1.5rem;">
-                        <div th:if="${!#lists.isEmpty(unit.workItems)}">
-                            <div th:each="wi : ${unit.workItems}"
-                                 class="d-flex align-center gap-4"
-                                 style="padding: 0.35rem 0; border-top: 1px solid var(--border); flex-wrap: wrap;">
-                                <form th:action="@{/work-items/{id}/complete(id=${wi.id})}" method="post" style="display:inline; flex-shrink: 0;">
-                                    <input type="hidden" name="returnUrl" th:value="@{/courses/{id}(id=${course.id})}"/>
-                                    <button type="submit"
-                                            th:title="${wi.status.name() == 'COMPLETE' ? 'Mark incomplete' : 'Mark complete'}"
-                                            style="background: none; border: none; cursor: pointer; padding: 0; font-size: 1rem; line-height: 1;"
-                                            th:text="${wi.status.name() == 'COMPLETE' ? '✓' : '○'}">○</button>
-                                </form>
-                                <a th:href="@{/work-items/{id}(id=${wi.id})}"
-                                   th:text="${wi.title}"
-                                   th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}"
-                                   style="flex: 1; min-width: 0;">Work Item</a>
-                                <span class="badge text-small"
-                                      th:text="${wi.typeLabel}">Type</span>
-                                <span class="text-small text-muted" th:if="${wi.dueDate != null}"
-                                      th:text="'Due ' + ${#temporals.format(wi.dueDate, 'MMM d')}"></span>
-                                <a th:href="@{/work-items/{id}/edit(id=${wi.id})}"
-                                   class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Edit</a>
+                    <!-- Work items: collapsed toggle -->
+                    <div style="margin-top: 0.6rem; margin-left: 1.5rem;">
+                        <button @click="open = !open" type="button"
+                                class="btn btn-secondary btn-sm"
+                                style="font-size: 0.8rem;">
+                            <span x-text="open ? '▲' : '▼'" style="font-size: 0.65rem;"></span>
+                            <span th:text="${#lists.size(unit.workItems)} + ' work items · ' + ${unitComplete} + ' complete'">0 work items</span>
+                        </button>
+
+                        <div x-show="open" x-cloak style="display: none; margin-top: 0.5rem;">
+                            <div th:if="${!#lists.isEmpty(unit.workItems)}">
+                                <div th:each="wi : ${unit.workItems}"
+                                     class="d-flex align-center gap-4"
+                                     style="padding: 0.35rem 0; border-top: 1px solid var(--border); flex-wrap: wrap;">
+                                    <form th:action="@{/work-items/{id}/complete(id=${wi.id})}" method="post" style="display:inline; flex-shrink: 0;">
+                                        <input type="hidden" name="returnUrl" th:value="@{/courses/{id}(id=${course.id})}"/>
+                                        <button type="submit"
+                                                th:title="${wi.status.name() == 'COMPLETE' ? 'Mark incomplete' : 'Mark complete'}"
+                                                style="background: none; border: none; cursor: pointer; padding: 0; font-size: 1rem; line-height: 1;"
+                                                th:text="${wi.status.name() == 'COMPLETE' ? '✓' : '○'}">○</button>
+                                    </form>
+                                    <a th:href="@{/work-items/{id}(id=${wi.id})}"
+                                       th:text="${wi.title}"
+                                       th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}"
+                                       style="flex: 1; min-width: 0;">Work Item</a>
+                                    <span class="badge text-small"
+                                          th:text="${wi.typeLabel}">Type</span>
+                                    <span class="text-small text-muted" th:if="${wi.dueDate != null}"
+                                          th:text="'Due ' + ${#temporals.format(wi.dueDate, 'MMM d')}"></span>
+                                    <a th:href="@{/work-items/{id}/edit(id=${wi.id})}"
+                                       class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Edit</a>
+                                </div>
                             </div>
-                        </div>
-                        <div th:if="${#lists.isEmpty(unit.workItems)}"
-                             class="text-small text-muted" style="padding: 0.5rem 0; font-style: italic;">
-                            No work items yet.
-                        </div>
-                        <!-- Add work item dropdown -->
-                        <div style="margin-top: 0.5rem;" x-data="{ open: false }">
-                            <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">+ Add Work Item</button>
-                            <div x-show="open" x-cloak
-                                 style="display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; margin-top: 0.25rem; width: 200px;">
-                                <a th:href="@{/work-items/new(type='READING',unitId=${unit.id})}"
-                                   style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Reading</a>
-                                <a th:href="@{/work-items/new(type='ASSIGNMENT',unitId=${unit.id})}"
-                                   style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Assignment</a>
-                                <a th:href="@{/work-items/new(type='PAPER',unitId=${unit.id})}"
-                                   style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Paper</a>
-                                <a th:href="@{/work-items/new(type='PRACTICE_SESSION',unitId=${unit.id})}"
-                                   style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Practice Session</a>
+                            <div th:if="${#lists.isEmpty(unit.workItems)}"
+                                 class="text-small text-muted" style="padding: 0.5rem 0; font-style: italic;">
+                                No work items yet.
+                            </div>
+                            <!-- Add work item dropdown -->
+                            <div style="margin-top: 0.5rem;" x-data="{ addOpen: false }">
+                                <button @click="addOpen = !addOpen" type="button" class="btn btn-secondary btn-sm">+ Add Work Item</button>
+                                <div x-show="addOpen" x-cloak
+                                     style="display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; margin-top: 0.25rem; width: 200px;">
+                                    <a th:href="@{/work-items/new(type='READING',unitId=${unit.id})}"
+                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Reading</a>
+                                    <a th:href="@{/work-items/new(type='ASSIGNMENT',unitId=${unit.id})}"
+                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Assignment</a>
+                                    <a th:href="@{/work-items/new(type='PAPER',unitId=${unit.id})}"
+                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Paper</a>
+                                    <a th:href="@{/work-items/new(type='PRACTICE_SESSION',unitId=${unit.id})}"
+                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Practice Session</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -209,7 +215,6 @@
             Drag units to reorder them within the course.
         </p>
     </div>
-
 
     <!-- Notes section -->
     <div class="section-header" style="margin-top: 2rem;">

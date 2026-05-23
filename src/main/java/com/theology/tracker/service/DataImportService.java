@@ -264,6 +264,7 @@ public class DataImportService {
             case TOPIC -> topicMap.containsKey(oldId) ? topicMap.get(oldId).getId() : oldId;
             case METHOD -> methodMap.containsKey(oldId) ? methodMap.get(oldId).getId() : oldId;
             case SESSION -> sessionMap.containsKey(oldId) ? sessionMap.get(oldId).getId() : oldId;
+            case WORK_ITEM -> oldId;
         };
     }
 

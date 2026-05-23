@@ -8,6 +8,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -114,8 +116,16 @@ public class TopicController {
         Set<Long> alreadyAssocWorkItemIds = Stream.concat(ownedWorkItems.stream(), taggedWorkItems.stream())
             .map(WorkItem::getId).collect(Collectors.toSet());
         Set<Long> ownedNoteIds = ownedNotes.stream().map(Note::getId).collect(Collectors.toSet());
-        Set<Long> taggedNoteIds = taggedNotes.stream().map(Note::getId).collect(Collectors.toSet());
-        Set<Long> alreadyAssocNoteIds = Stream.concat(ownedNoteIds.stream(), taggedNoteIds.stream())
+        List<Note> uniqueTaggedNotes = taggedNotes.stream()
+            .filter(n -> !ownedNoteIds.contains(n.getId()))
+            .toList();
+        Set<Long> taggedOnlyNoteIds = uniqueTaggedNotes.stream().map(Note::getId).collect(Collectors.toSet());
+        List<Note> allNotes = new ArrayList<>();
+        allNotes.addAll(ownedNotes);
+        allNotes.addAll(uniqueTaggedNotes);
+        allNotes.sort(Comparator.comparing(Note::isStarred).reversed()
+            .thenComparing(Comparator.comparing(Note::getUpdatedAt).reversed()));
+        Set<Long> alreadyAssocNoteIds = Stream.concat(ownedNoteIds.stream(), taggedOnlyNoteIds.stream())
             .collect(Collectors.toSet());
 
         List<Course> availableCourses = courseService.findAll().stream()
@@ -138,11 +148,11 @@ public class TopicController {
         model.addAttribute("ownedAssignments", ownedAssignments);
         model.addAttribute("ownedPapers", ownedPapers);
         model.addAttribute("ownedPractices", ownedPractices);
-        model.addAttribute("ownedNotes", ownedNotes);
+        model.addAttribute("allNotes", allNotes);
+        model.addAttribute("taggedOnlyNoteIds", taggedOnlyNoteIds);
         model.addAttribute("taggedWorkItems", taggedWorkItems);
         model.addAttribute("taggedCourses", taggedCourses);
         model.addAttribute("taggedUnits", taggedUnits);
-        model.addAttribute("taggedNotes", taggedNotes);
         model.addAttribute("sessions", sessions);
         model.addAttribute("totalWorkItems", totalWorkItems);
         model.addAttribute("completeWorkItems", completeWorkItems);
