@@ -1,0 +1,5 @@
+{
+  "env": {
+    "THEOLOGY_DB_PATH": "/Users/jonathan/projects/theology-tracker-java/data/theology.db"
+  }
+}

@@ -11,6 +11,23 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ── Lucide icons ───────────────────────────────────────────────────────
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // ── Dark mode toggle ───────────────────────────────────────────────────
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle?.addEventListener('click', () => {
+        const html = document.documentElement;
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+
     // ── Mobile sidebar toggle ──────────────────────────────────────────────
     const sidebar  = document.getElementById('sidebar');
     const overlay  = document.getElementById('sidebar-overlay');
@@ -51,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Re-initialize after any HTMX swap that may have added new sortable lists
     document.body.addEventListener('htmx:afterSwap', () => {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         initSortable();
         initMarkdownPreview();
     });

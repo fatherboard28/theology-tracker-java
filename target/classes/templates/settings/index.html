@@ -25,16 +25,16 @@
 
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                 <a th:href="@{/export/json}" class="btn btn-primary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <i data-lucide="download" width="16" height="16"></i>
                     Download JSON Export
                 </a>
                 <a th:href="@{/export/markdown}" class="btn btn-secondary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <i data-lucide="download" width="16" height="16"></i>
                     Download Markdown Notes
                 </a>
             </div>
 
-            <div class="help-text" style="margin-top: 1rem;">
+            <div class="form-hint" style="margin-top: 1rem;">
                 <p><strong>JSON export</strong> — All entities and relationships. Suitable for backup and full restore via import.</p>
                 <p><strong>Markdown export</strong> — All notes organized by parent entity, plus session reflections. Read-only; not re-importable.</p>
             </div>
@@ -56,7 +56,7 @@
                 <div class="form-group">
                     <label class="form-label" for="file">Select JSON export file</label>
                     <input type="file" id="file" name="file" accept=".json" class="form-control" required/>
-                    <p class="help-text">Select a <code>.json</code> file previously exported from Theology Tracker.</p>
+                    <p class="form-hint">Select a <code>.json</code> file previously exported from Theology Tracker.</p>
                 </div>
 
                 <div x-data="{ confirmed: false }">

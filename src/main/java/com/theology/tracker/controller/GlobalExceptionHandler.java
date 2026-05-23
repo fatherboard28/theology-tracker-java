@@ -12,10 +12,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.theology.tracker.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
-/**
- * Global error handler.
- * Renders friendly Thymeleaf error pages instead of the default Spring whitelabel.
- */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -27,6 +23,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleResourceNotFound(ResourceNotFoundException ex, Model model, HttpServletRequest request) {
+        model.addAttribute("requestURI", request.getRequestURI());
         model.addAttribute("status",  404);
         model.addAttribute("message", ex.getMessage());
         model.addAttribute("path",    request.getRequestURI());
@@ -36,6 +33,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleNotFound(NoHandlerFoundException ex, Model model, HttpServletRequest request) {
+        model.addAttribute("requestURI", request.getRequestURI());
         model.addAttribute("status",  404);
         model.addAttribute("message", "The page you're looking for doesn't exist.");
         model.addAttribute("path",    request.getRequestURI());
@@ -45,6 +43,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleNoResource(NoResourceFoundException ex, Model model, HttpServletRequest request) {
+        model.addAttribute("requestURI", request.getRequestURI());
         model.addAttribute("status",  404);
         model.addAttribute("message", "Resource not found.");
         model.addAttribute("path",    request.getRequestURI());
@@ -53,7 +52,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleBadRequest(IllegalArgumentException ex, Model model) {
+    public String handleBadRequest(IllegalArgumentException ex, Model model, HttpServletRequest request) {
+        model.addAttribute("requestURI", request.getRequestURI());
         model.addAttribute("status",  400);
         model.addAttribute("message", ex.getMessage());
         return "error/error";
@@ -62,6 +62,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleGeneral(Exception ex, Model model, HttpServletRequest request) {
+        model.addAttribute("requestURI", request.getRequestURI());
         model.addAttribute("status",  500);
         model.addAttribute("message", "An unexpected error occurred.");
         model.addAttribute("detail",  ex.getMessage());

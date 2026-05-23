@@ -20,3 +20,10 @@
 
 ## Stage Instructions
 Each time you are asked to implement a stage, base the implementation on the tasks.md and theology-study-tracker-spec.md.
+## Running the App
+
+```bash
+JAVA_HOME=/Users/jonathan/.sdkman/candidates/java/21.0.11-amzn \
+THEOLOGY_DB_PATH=/Users/jonathan/projects/theology-tracker-java/data/theology.db \
+/Users/jonathan/.sdkman/candidates/maven/3.9.9/bin/mvn spring-boot:run
+```

@@ -6,18 +6,13 @@
 <head><title>Error</title></head>
 <body>
 <div layout:fragment="content">
-    <div class="page-header">
-        <h1 class="page-title" th:text="${status != null ? status : 'Error'}">Error</h1>
-        <p class="page-subtitle" th:text="${message != null ? message : 'Something went wrong.'}">Something went wrong.</p>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; padding: 80px 24px;">
+        <div style="font-size: 80px; font-weight: 700; color: var(--text-secondary); line-height: 1; margin-bottom: 24px;"
+             th:text="${status != null ? status : '500'}">500</div>
+        <p style="font-size: 17px; color: var(--text-primary); margin: 0 0 40px; max-width: 480px;"
+           th:text="${message != null ? message : 'Something went wrong. Please try again.'}">Something went wrong.</p>
+        <a th:href="@{/dashboard}" class="btn btn-primary">Back to Dashboard</a>
     </div>
-    <div th:if="${detail != null}" class="card">
-        <div class="card-body">
-            <code th:text="${detail}"></code>
-        </div>
-    </div>
-    <p style="margin-top: 2rem;">
-        <a th:href="@{/dashboard}" class="btn btn-primary">&#8592; Back to Dashboard</a>
-    </p>
 </div>
 </body>
 </html>

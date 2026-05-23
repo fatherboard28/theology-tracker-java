@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "theology-tracker",
-      "runtimeExecutable": "/Users/jonathan/.sdkman/candidates/maven/3.9.9/bin/mvn",
-      "runtimeArgs": ["spring-boot:run"],
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["/Users/jonathan/projects/theology-tracker-java/run-dev.sh"],
       "port": 8080
     }
   ]
 }
+

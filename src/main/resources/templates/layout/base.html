@@ -36,42 +36,42 @@
 
         <nav class="sidebar-nav">
             <a th:href="@{/dashboard}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/dashboard')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/dashboard')} ? 'active'">
                 <i data-lucide="layout-dashboard" width="20" height="20"></i>
                 <span>Dashboard</span>
             </a>
             <a th:href="@{/courses}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/courses')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/courses')} ? 'active'">
                 <i data-lucide="book-open" width="20" height="20"></i>
                 <span>Courses</span>
             </a>
             <a th:href="@{/topics}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/topics')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/topics')} ? 'active'">
                 <i data-lucide="tag" width="20" height="20"></i>
                 <span>Topics</span>
             </a>
             <a th:href="@{/notes}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/notes')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/notes')} ? 'active'">
                 <i data-lucide="file-text" width="20" height="20"></i>
                 <span>Notes</span>
             </a>
             <a th:href="@{/sessions}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/sessions')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/sessions')} ? 'active'">
                 <i data-lucide="clock" width="20" height="20"></i>
                 <span>Sessions</span>
             </a>
             <a th:href="@{/methods}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/methods')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/methods')} ? 'active'">
                 <i data-lucide="layers" width="20" height="20"></i>
                 <span>Methods</span>
             </a>
             <a th:href="@{/calendar}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/calendar')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/calendar')} ? 'active'">
                 <i data-lucide="calendar" width="20" height="20"></i>
                 <span>Calendar</span>
             </a>
             <a th:href="@{/scripture}" class="sidebar-link"
-               th:classappend="${requestURI.startsWith('/scripture')} ? 'active'">
+               th:classappend="${requestURI?.startsWith('/scripture')} ? 'active'">
                 <i data-lucide="book" width="20" height="20"></i>
                 <span>Scripture</span>
             </a>

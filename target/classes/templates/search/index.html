@@ -32,7 +32,7 @@
                            placeholder="Search notes, courses, topics, scripture refs..."
                            autocomplete="off"
                            autofocus/>
-                    <div class="form-hint" style="margin-top: 0.35rem;">
+                    <div class="form-hint" style="margin-top: 8px;">
                         Searches titles, descriptions, note bodies, and session reflections.
                         Scripture references (e.g. <code>Rom 8</code>) also match tagged entities.
                     </div>
@@ -57,7 +57,7 @@
 
         <!-- Courses -->
         <div th:if="${!result.courses().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
                 Courses
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.courses().size()}"></span>
             </h3>
@@ -84,7 +84,7 @@
 
         <!-- Units -->
         <div th:if="${!result.units().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
                 Units
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.units().size()}"></span>
             </h3>
@@ -109,7 +109,7 @@
 
         <!-- Topics -->
         <div th:if="${!result.topics().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
                 Topics
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.topics().size()}"></span>
             </h3>
@@ -135,7 +135,7 @@
 
         <!-- Work Items -->
         <div th:if="${!result.workItems().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
                 Work Items
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.workItems().size()}"></span>
             </h3>
@@ -166,7 +166,7 @@
 
         <!-- Notes -->
         <div th:if="${!result.notes().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
                 Notes
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.notes().size()}"></span>
             </h3>
@@ -194,7 +194,7 @@
 
         <!-- Study Sessions -->
         <div th:if="${!result.sessions().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">
+            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
                 Study Sessions
                 <span class="badge" style="margin-left: 0.5rem;" th:text="${result.sessions().size()}"></span>
             </h3>
