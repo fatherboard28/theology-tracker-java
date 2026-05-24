@@ -5,7 +5,8 @@
       "name": "theology-tracker",
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": ["/Users/jonathan/projects/theology-tracker-java/run-dev.sh"],
-      "port": 8080
+      "port": 8080,
+    "autoPort": false
     }
   ]
 }

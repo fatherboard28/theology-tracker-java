@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Lucide icons ───────────────────────────────────────────────────────
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
+    // Re-enable sidebar transitions after first paint (prevents flash on page load)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.documentElement.classList.remove('sidebar-no-transition');
+    }));
+
     // ── Dark mode toggle ───────────────────────────────────────────────────
     const themeToggle = document.getElementById('theme-toggle');
     themeToggle?.addEventListener('click', () => {
@@ -49,6 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
     openBtn?.addEventListener('click', openSidebar);
     closeBtn?.addEventListener('click', closeSidebar);
     overlay?.addEventListener('click', closeSidebar);
+
+    // ── Sidebar collapse (desktop only) ───────────────────────────────────
+    const collapseBtn = document.getElementById('sidebar-collapse');
+
+    collapseBtn?.addEventListener('click', () => {
+        const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', collapsed ? 'true' : 'false');
+    });
 
     // ── HTMX configuration ─────────────────────────────────────────────────
     if (typeof htmx !== 'undefined') {
