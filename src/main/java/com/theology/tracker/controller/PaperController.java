@@ -3,9 +3,12 @@ package com.theology.tracker.controller;
 import com.theology.tracker.dto.PaperFormDto;
 import com.theology.tracker.model.Paper;
 import com.theology.tracker.model.PaperStatus;
+import com.theology.tracker.service.PaperExportService;
 import com.theology.tracker.service.PaperService;
 import com.theology.tracker.service.TopicService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +26,12 @@ public class PaperController {
 
     private final PaperService paperService;
     private final TopicService topicService;
+    private final PaperExportService exportService;
 
-    public PaperController(PaperService paperService, TopicService topicService) {
+    public PaperController(PaperService paperService, TopicService topicService, PaperExportService exportService) {
         this.paperService = paperService;
         this.topicService = topicService;
+        this.exportService = exportService;
     }
 
     @GetMapping
@@ -107,10 +112,42 @@ public class PaperController {
         return "{\"savedAt\":\"" + savedAt.format(TIME_FMT) + "\"}";
     }
 
+    @GetMapping("/{id}/download-pdf")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id) {
+        try {
+            Paper paper = paperService.findById(id);
+            byte[] data = exportService.toPdf(paper);
+            return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + safeFilename(paper.getTitle()) + ".pdf\"")
+                .body(data);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/{id}/download-docx")
+    public ResponseEntity<byte[]> downloadDocx(@PathVariable Long id) {
+        try {
+            Paper paper = paperService.findById(id);
+            byte[] data = exportService.toDocx(paper);
+            return ResponseEntity.ok()
+                .contentType(MediaType.valueOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + safeFilename(paper.getTitle()) + ".docx\"")
+                .body(data);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
         paperService.delete(id);
         ra.addFlashAttribute("successMessage", "Paper deleted.");
         return "redirect:/papers";
+    }
+
+    private static String safeFilename(String title) {
+        return title.replaceAll("[^\\w\\s-]", "").trim().replaceAll("\\s+", "_");
     }
 }

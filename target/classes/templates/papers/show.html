@@ -68,6 +68,10 @@
                 &ensp;&middot;&ensp;
                 <button type="submit" class="doc-meta-action">Save metadata</button>
                 &ensp;&middot;&ensp;
+                <a th:href="@{/papers/{id}/download-pdf(id=${paper.id})}" class="doc-meta-action">&#8595; PDF</a>
+                &ensp;&middot;&ensp;
+                <a th:href="@{/papers/{id}/download-docx(id=${paper.id})}" class="doc-meta-action">&#8595; DOCX</a>
+                &ensp;&middot;&ensp;
                 <button type="submit" class="doc-meta-action doc-meta-delete"
                         th:formaction="@{/papers/{id}/delete(id=${paper.id})}"
                         th:attr="data-confirm='Delete &quot;' + ${paper.title} + '&quot;?'">Delete</button>
