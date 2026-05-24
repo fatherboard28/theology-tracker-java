@@ -7,256 +7,229 @@
 <body>
 <div layout:fragment="content">
 
-    <!-- Page header -->
-    <div class="page-header" style="margin-bottom: 1.5rem;">
-        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+    <div class="page-header">
+        <div style="margin-bottom:1rem;">
             <a th:href="@{/courses}" class="btn btn-secondary btn-sm">&larr; Courses</a>
         </div>
-        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem;">
-            <div style="flex: 1; min-width: 0;">
-                <div class="d-flex align-center gap-4" style="margin-bottom: 0.4rem; flex-wrap: wrap;">
-                    <h1 class="page-title" style="margin: 0;" th:text="${course.title}">Course Title</h1>
-                    <span class="badge"
-                          th:classappend="${course.status.name() == 'ACTIVE' ? 'badge-active' : (course.status.name() == 'PAUSED' ? 'badge-paused' : 'badge-complete')}"
-                          th:text="${course.status}">ACTIVE</span>
-                </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div>
+                <h1 class="page-title" style="margin:0;" th:text="${course.title}">Course</h1>
                 <p class="page-subtitle" th:if="${course.description}" th:text="${course.description}"></p>
-
-                <!-- Topic tags inline -->
-                <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
-                    <span th:if="${!#sets.isEmpty(course.topics)}" class="topic-tags-row" style="margin: 0; display: contents;">
-                        <span th:each="topic : ${course.topics}" class="topic-tag topic-tag-sm">
-                            <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
-                        </span>
-                    </span>
-                    <span th:if="${#sets.isEmpty(course.topics)}" class="text-muted text-small" style="font-style: italic;">no topics</span>
-                    <a th:href="@{/courses/{id}/edit(id=${course.id})}"
-                       class="text-muted text-small" style="font-size: 0.75rem;">edit tags</a>
-                </div>
-
-                <!-- Date line -->
-                <p class="text-muted text-small" style="margin: 0.4rem 0 0;"
-                   th:if="${course.startDate != null or course.targetCompletion != null}">
-                    <span th:if="${course.startDate != null}">
-                        Started <span th:text="${#temporals.format(course.startDate, 'MMM d, yyyy')}"></span>
-                    </span>
-                    <span th:if="${course.startDate != null and course.targetCompletion != null}"> &middot; </span>
-                    <span th:if="${course.targetCompletion != null}">
-                        Target <span th:text="${#temporals.format(course.targetCompletion, 'MMM d, yyyy')}"></span>
-                    </span>
-                    <span th:if="${course.actualCompletion != null}">
-                        &middot; Completed <span th:text="${#temporals.format(course.actualCompletion, 'MMM d, yyyy')}"></span>
-                    </span>
-                </p>
-
-                <!-- Progress bar -->
-                <div style="margin-top: 0.6rem; max-width: 360px;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" th:style="'width: ' + ${progress} + '%'"></div>
-                    </div>
-                    <div class="text-small text-muted" style="margin-top: 0.2rem;">
-                        <span th:text="${progress}">0</span>% of work items complete
-                    </div>
-                </div>
             </div>
-
-            <div class="d-flex gap-2" style="flex-shrink: 0;">
+            <div style="display:flex;gap:0.5rem;flex-shrink:0;">
                 <a th:href="@{/courses/{id}/edit(id=${course.id})}" class="btn btn-secondary btn-sm">Edit</a>
-                <!-- Status dropdown -->
-                <div x-data="{ open: false }" style="position: relative;">
-                    <button @click="open = !open" type="button" class="btn btn-secondary btn-sm">Status &#9660;</button>
-                    <div x-show="open" x-cloak
-                         style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.25rem;
-                                background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
-                                padding: 0.5rem; min-width: 150px; z-index: 10;">
-                        <form th:each="s : ${statuses}"
-                              th:if="${course.status != s}"
-                              th:action="@{/courses/{id}/status(id=${course.id})}"
-                              method="post" style="display:block; margin: 0;">
-                            <input type="hidden" name="status" th:value="${s.name()}"/>
-                            <button type="submit"
-                                    class="btn btn-secondary btn-sm"
-                                    style="width: 100%; text-align: left; margin-bottom: 0.2rem;"
-                                    th:text="'→ ' + ${s}">→ ACTIVE</button>
-                        </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add task form -->
+    <details style="margin-bottom:1.25rem;">
+        <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--text-secondary);list-style:none;display:flex;align-items:center;gap:0.4rem;">
+            <span>&#43;</span> Add Task
+        </summary>
+        <div class="card" style="margin-top:0.75rem;max-width:580px;">
+            <div class="card-body">
+                <form th:action="@{/courses/{id}/tasks(id=${course.id})}" method="post">
+                    <div class="form-group">
+                        <label class="form-label required" for="taskTitle">Title</label>
+                        <input type="text" id="taskTitle" name="title" class="form-control"
+                               placeholder="Task title" required autofocus/>
                     </div>
-                </div>
-                <form th:action="@{/courses/{id}/delete(id=${course.id})}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm"
-                            th:attr="data-confirm='Delete course &quot;' + ${course.title} + '&quot;? This will also delete all its units and work items.'">
-                        Delete
-                    </button>
+                    <div class="form-group">
+                        <label class="form-label" for="taskDesc">Description</label>
+                        <textarea id="taskDesc" name="description" class="form-control" rows="2"
+                                  placeholder="Optional description"></textarea>
+                    </div>
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:140px;">
+                            <label class="form-label" for="taskStatus">Status</label>
+                            <select id="taskStatus" name="status" class="form-control">
+                                <option value="TO_DO">To Do</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="DONE">Done</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:140px;">
+                            <label class="form-label" for="taskDue">Due Date</label>
+                            <input type="date" id="taskDue" name="dueDate" class="form-control"/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Add Task</button>
                 </form>
             </div>
         </div>
-    </div>
+    </details>
 
-    <!-- Units section -->
-    <div class="section-header">
-        <h2>Units</h2>
-        <a th:href="@{/courses/{id}/units/new(id=${course.id})}" class="btn btn-primary btn-sm">+ Add Unit</a>
-    </div>
+    <!-- Kanban board -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;align-items:start;">
 
-    <div class="empty-state" th:if="${#lists.isEmpty(units)}">
-        <p>No units yet. <a th:href="@{/courses/{id}/units/new(id=${course.id})}">Add the first unit</a> to this course.</p>
-    </div>
-
-    <div th:if="${!#lists.isEmpty(units)}">
-        <ul class="unit-list sortable-list"
-            th:data-sort-url="@{/courses/{id}/units/reorder(id=${course.id})}"
-            style="list-style: none; padding: 0; margin: 0;">
-            <li class="unit-item"
-                th:each="unit, iter : ${units}"
-                th:with="unitComplete=${#lists.size(unit.workItems.?[status.name() == 'COMPLETE'])}"
-                x-data="{ open: false }"
-                th:data-id="${unit.id}">
-                <div class="unit-drag-handle drag-handle" title="Drag to reorder">
-                    <span>&#8597;</span>
-                </div>
-                <div class="unit-item-body">
-                    <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div class="d-flex align-center gap-4">
-                                <span class="unit-order text-muted text-small"
-                                      th:text="${iter.index + 1} + '.'">1.</span>
-                                <strong th:text="${unit.title}">Unit Title</strong>
-                                <span class="badge badge-complete" th:if="${unit.actualCompletion != null}">Complete</span>
-                            </div>
-                            <p class="text-small text-muted" style="margin: 0.25rem 0 0 1.5rem;"
-                               th:if="${unit.description}" th:text="${unit.description}"></p>
-                            <div th:if="${!#sets.isEmpty(unit.topics)}"
-                                 class="topic-tags-row" style="margin: 0.35rem 0 0 1.5rem;">
-                                <span th:each="topic : ${unit.topics}" class="topic-tag topic-tag-sm">
-                                    <a th:href="@{/topics/{id}(id=${topic.id})}"
-                                       th:text="${topic.title}">Topic</a>
-                                </span>
-                            </div>
-                            <div class="text-small text-muted" style="margin: 0.25rem 0 0 1.5rem;"
-                                 th:if="${unit.targetCompletion != null or unit.actualCompletion != null}">
-                                <span th:if="${unit.targetCompletion != null}">
-                                    Target: <span th:text="${#temporals.format(unit.targetCompletion, 'MMM d, yyyy')}"></span>
-                                </span>
-                                <span th:if="${unit.actualCompletion != null}">
-                                    &nbsp;&mdash; Completed: <span th:text="${#temporals.format(unit.actualCompletion, 'MMM d, yyyy')}"></span>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2" style="flex-shrink: 0;">
-                            <a th:href="@{/courses/{cId}/units/{uId}/edit(cId=${course.id},uId=${unit.id})}"
-                               class="btn btn-secondary btn-sm">Edit</a>
-                            <form th:action="@{/courses/{cId}/units/{uId}/delete(cId=${course.id},uId=${unit.id})}"
-                                  method="post" style="display:inline;">
-                                <button type="submit" class="btn btn-danger btn-sm"
-                                        th:attr="data-confirm='Delete unit &quot;' + ${unit.title} + '&quot;? This will also delete all its work items.'">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Work items: collapsed toggle -->
-                    <div style="margin-top: 0.6rem; margin-left: 1.5rem;">
-                        <button @click="open = !open" type="button"
-                                class="btn btn-secondary btn-sm"
-                                style="font-size: 0.8rem;">
-                            <span x-text="open ? '▲' : '▼'" style="font-size: 0.65rem;"></span>
-                            <span th:text="${#lists.size(unit.workItems)} + ' work items · ' + ${unitComplete} + ' complete'">0 work items</span>
-                        </button>
-
-                        <div x-show="open" x-cloak style="display: none; margin-top: 0.5rem;">
-                            <div th:if="${!#lists.isEmpty(unit.workItems)}">
-                                <div th:each="wi : ${unit.workItems}"
-                                     class="d-flex align-center gap-4"
-                                     style="padding: 0.35rem 0; border-top: 1px solid var(--border); flex-wrap: wrap;">
-                                    <form th:action="@{/work-items/{id}/complete(id=${wi.id})}" method="post" style="display:inline; flex-shrink: 0;">
-                                        <input type="hidden" name="returnUrl" th:value="@{/courses/{id}(id=${course.id})}"/>
-                                        <button type="submit"
-                                                th:title="${wi.status.name() == 'COMPLETE' ? 'Mark incomplete' : 'Mark complete'}"
-                                                style="background: none; border: none; cursor: pointer; padding: 0; font-size: 1rem; line-height: 1;"
-                                                th:text="${wi.status.name() == 'COMPLETE' ? '✓' : '○'}">○</button>
-                                    </form>
-                                    <a th:href="@{/work-items/{id}(id=${wi.id})}"
-                                       th:text="${wi.title}"
-                                       th:style="${wi.status.name() == 'COMPLETE' ? 'text-decoration: line-through; color: var(--text-secondary);' : ''}"
-                                       style="flex: 1; min-width: 0;">Work Item</a>
-                                    <span class="badge text-small"
-                                          th:text="${wi.typeLabel}">Type</span>
-                                    <span class="text-small text-muted" th:if="${wi.dueDate != null}"
-                                          th:text="'Due ' + ${#temporals.format(wi.dueDate, 'MMM d')}"></span>
-                                    <a th:href="@{/work-items/{id}/edit(id=${wi.id})}"
-                                       class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Edit</a>
-                                </div>
-                            </div>
-                            <div th:if="${#lists.isEmpty(unit.workItems)}"
-                                 class="text-small text-muted" style="padding: 0.5rem 0; font-style: italic;">
-                                No work items yet.
-                            </div>
-                            <!-- Add work item dropdown -->
-                            <div style="margin-top: 0.5rem;" x-data="{ addOpen: false }">
-                                <button @click="addOpen = !addOpen" type="button" class="btn btn-secondary btn-sm">+ Add Work Item</button>
-                                <div x-show="addOpen" x-cloak
-                                     style="display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; margin-top: 0.25rem; width: 200px;">
-                                    <a th:href="@{/work-items/new(type='READING',unitId=${unit.id})}"
-                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Reading</a>
-                                    <a th:href="@{/work-items/new(type='ASSIGNMENT',unitId=${unit.id})}"
-                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Assignment</a>
-                                    <a th:href="@{/work-items/new(type='PAPER',unitId=${unit.id})}"
-                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Paper</a>
-                                    <a th:href="@{/work-items/new(type='PRACTICE_SESSION',unitId=${unit.id})}"
-                                       style="display: block; padding: 0.4rem 0.75rem; text-decoration: none;">Practice Session</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </li>
-        </ul>
-        <p class="text-small text-muted" style="margin-top: 0.75rem; font-style: italic;">
-            Drag units to reorder them within the course.
-        </p>
-    </div>
-
-    <!-- Notes section -->
-    <div class="section-header" style="margin-top: 2rem;">
-        <h2>Notes</h2>
-        <a th:href="@{/notes/new(parentType='COURSE',parentId=${course.id})}"
-           class="btn btn-primary btn-sm">+ Add Note</a>
-    </div>
-
-    <div class="empty-state" th:if="${#lists.isEmpty(notes)}" style="padding: 2rem 0;">
-        <p>No notes yet.
-            <a th:href="@{/notes/new(parentType='COURSE',parentId=${course.id})}">Add a note</a>
-            to this course.
-        </p>
-    </div>
-
-    <div class="note-list" th:if="${!#lists.isEmpty(notes)}">
-        <div class="note-card" th:each="note : ${notes}">
-            <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                <div style="flex: 1; min-width: 0;">
-                    <div class="d-flex align-center gap-4" style="margin-bottom: 0.25rem; flex-wrap: wrap;">
-                        <a class="note-card-title"
-                           th:href="@{/notes/{id}(id=${note.id})}"
-                           th:text="${note.title}">Note</a>
-                        <span class="text-small text-muted"
-                              th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
-                    </div>
-                    <div class="note-preview"
-                         th:if="${note.body != null and !note.body.isBlank()}"
-                         th:text="${#strings.abbreviate(note.body, 120)}"></div>
-                    <div th:if="${!#sets.isEmpty(note.topicTags)}"
-                         class="topic-tags-row" style="margin-top: 0.3rem;">
-                        <span th:each="topic : ${note.topicTags}" class="topic-tag topic-tag-sm">
-                            <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
-                        </span>
-                    </div>
-                </div>
-                <a th:href="@{/notes/{id}(id=${note.id})}"
-                   class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Open</a>
+        <!-- TO DO -->
+        <div>
+            <div style="font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary);margin-bottom:0.75rem;padding:0.4rem 0;border-bottom:2px solid var(--border);">
+                To Do <span class="text-muted" th:text="'(' + ${#lists.size(toDo)} + ')'"></span>
+            </div>
+            <div class="kanban-col" id="col-TO_DO" data-status="TO_DO"
+                 th:data-course-id="${course.id}"
+                 style="display:flex;flex-direction:column;gap:0.5rem;min-height:120px;">
+                <div th:each="task : ${toDo}" th:replace="~{courses/show :: taskCard(${task}, ${course.id}, ${allNotes}, ${allPapers})}"></div>
             </div>
         </div>
+
+        <!-- IN PROGRESS -->
+        <div>
+            <div style="font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-primary);margin-bottom:0.75rem;padding:0.4rem 0;border-bottom:2px solid var(--color-primary);">
+                In Progress <span class="text-muted" th:text="'(' + ${#lists.size(inProgress)} + ')'"></span>
+            </div>
+            <div class="kanban-col" id="col-IN_PROGRESS" data-status="IN_PROGRESS"
+                 th:data-course-id="${course.id}"
+                 style="display:flex;flex-direction:column;gap:0.5rem;min-height:120px;">
+                <div th:each="task : ${inProgress}" th:replace="~{courses/show :: taskCard(${task}, ${course.id}, ${allNotes}, ${allPapers})}"></div>
+            </div>
+        </div>
+
+        <!-- DONE -->
+        <div>
+            <div style="font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-success);margin-bottom:0.75rem;padding:0.4rem 0;border-bottom:2px solid var(--color-success);">
+                Done <span class="text-muted" th:text="'(' + ${#lists.size(done)} + ')'"></span>
+            </div>
+            <div class="kanban-col" id="col-DONE" data-status="DONE"
+                 th:data-course-id="${course.id}"
+                 style="display:flex;flex-direction:column;gap:0.5rem;min-height:120px;">
+                <div th:each="task : ${done}" th:replace="~{courses/show :: taskCard(${task}, ${course.id}, ${allNotes}, ${allPapers})}"></div>
+            </div>
+        </div>
+
     </div>
 
 </div>
+
+<!-- ── Task card fragment ─────────────────────────────────────────────────── -->
+<div th:fragment="taskCard(task, courseId, allNotes, allPapers)"
+     class="kanban-card"
+     th:data-task-id="${task.id}"
+     style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;cursor:grab;">
+
+    <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.3rem;" th:text="${task.title}">Task</div>
+    <div class="text-muted text-small" th:if="${task.description}" th:text="${task.description}" style="margin-bottom:0.4rem;"></div>
+    <div class="text-muted text-small" th:if="${task.dueDate}"
+         th:text="'Due: ' + ${#temporals.format(task.dueDate, 'MMM d')}" style="margin-bottom:0.4rem;"></div>
+
+    <!-- Attached notes -->
+    <div th:unless="${#sets.isEmpty(task.noteRefs)}" style="margin-bottom:0.4rem;">
+        <div th:each="n : ${task.noteRefs}"
+             style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:0.8rem;padding:0.2rem 0;">
+            <a th:href="@{/notes/{id}(id=${n.id})}" th:text="${n.title}" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></a>
+            <form th:action="@{/courses/{cid}/tasks/{tid}/notes/{nid}/detach(cid=${courseId},tid=${task.id},nid=${n.id})}" method="post" style="display:inline;">
+                <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:0.75rem;" title="Remove">×</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attached papers -->
+    <div th:unless="${#sets.isEmpty(task.paperRefs)}" style="margin-bottom:0.4rem;">
+        <div th:each="p : ${task.paperRefs}"
+             style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:0.8rem;padding:0.2rem 0;">
+            <a th:href="@{/papers/{id}(id=${p.id})}" th:text="${p.title}" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></a>
+            <form th:action="@{/courses/{cid}/tasks/{tid}/papers/{pid}/detach(cid=${courseId},tid=${task.id},pid=${p.id})}" method="post" style="display:inline;">
+                <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:0.75rem;" title="Remove">×</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Card actions -->
+    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);">
+        <!-- Move to status buttons -->
+        <form th:if="${task.status.name() != 'TO_DO'}"
+              th:action="@{/courses/{cid}/tasks/{tid}/status(cid=${courseId},tid=${task.id})}" method="post" style="display:inline;">
+            <input type="hidden" name="status" value="TO_DO"/>
+            <button type="submit" class="btn btn-secondary btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;">← To Do</button>
+        </form>
+        <form th:if="${task.status.name() != 'IN_PROGRESS'}"
+              th:action="@{/courses/{cid}/tasks/{tid}/status(cid=${courseId},tid=${task.id})}" method="post" style="display:inline;">
+            <input type="hidden" name="status" value="IN_PROGRESS"/>
+            <button type="submit" class="btn btn-secondary btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;">In Progress</button>
+        </form>
+        <form th:if="${task.status.name() != 'DONE'}"
+              th:action="@{/courses/{cid}/tasks/{tid}/status(cid=${courseId},tid=${task.id})}" method="post" style="display:inline;">
+            <input type="hidden" name="status" value="DONE"/>
+            <button type="submit" class="btn btn-secondary btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;">Done ✓</button>
+        </form>
+
+        <!-- Attach note -->
+        <div x-data="{ open: false }" style="position:relative;display:inline-block;" th:unless="${#lists.isEmpty(allNotes)}">
+            <button @click="open=!open" type="button" class="btn btn-secondary btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;">+ Note</button>
+            <div x-show="open" x-cloak style="display:none;position:absolute;left:0;top:100%;z-index:30;background:var(--card-bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem;min-width:220px;">
+                <form th:action="@{/courses/{cid}/tasks/{tid}/notes/attach(cid=${courseId},tid=${task.id})}" method="post">
+                    <select name="noteId" class="form-control" style="font-size:0.8rem;margin-bottom:0.35rem;">
+                        <option th:each="n : ${allNotes}" th:value="${n.id}" th:text="${n.title}"></option>
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm" style="width:100%;font-size:0.8rem;">Attach</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Attach paper -->
+        <div x-data="{ open: false }" style="position:relative;display:inline-block;" th:unless="${#lists.isEmpty(allPapers)}">
+            <button @click="open=!open" type="button" class="btn btn-secondary btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;">+ Paper</button>
+            <div x-show="open" x-cloak style="display:none;position:absolute;left:0;top:100%;z-index:30;background:var(--card-bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem;min-width:220px;">
+                <form th:action="@{/courses/{cid}/tasks/{tid}/papers/attach(cid=${courseId},tid=${task.id})}" method="post">
+                    <select name="paperId" class="form-control" style="font-size:0.8rem;margin-bottom:0.35rem;">
+                        <option th:each="p : ${allPapers}" th:value="${p.id}" th:text="${p.title}"></option>
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm" style="width:100%;font-size:0.8rem;">Attach</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Delete -->
+        <form th:action="@{/courses/{cid}/tasks/{tid}/delete(cid=${courseId},tid=${task.id})}" method="post" style="display:inline;margin-left:auto;">
+            <button type="submit" class="btn btn-danger btn-sm" style="font-size:0.7rem;padding:0.15rem 0.4rem;"
+                    th:attr="data-confirm='Delete task &quot;' + ${task.title} + '&quot;?'">×</button>
+        </form>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+<script>
+/* SortableJS drag-and-drop between kanban columns */
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Sortable === 'undefined') return;
+
+    document.querySelectorAll('.kanban-col').forEach(function (col) {
+        Sortable.create(col, {
+            group:     'kanban',
+            animation: 150,
+            handle:    '.kanban-card',
+            onEnd: function (evt) {
+                var card     = evt.item;
+                var taskId   = card.dataset.taskId;
+                var newCol   = evt.to;
+                var newStatus = newCol.dataset.status;
+                var courseId = newCol.dataset.courseId;
+
+                /* Update status if column changed */
+                if (evt.from !== evt.to) {
+                    fetch('/courses/' + courseId + '/tasks/' + taskId + '/status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'status=' + encodeURIComponent(newStatus)
+                    });
+                }
+
+                /* Persist new order within column */
+                var ids = Array.from(newCol.querySelectorAll('.kanban-card')).map(function (c) { return c.dataset.taskId; });
+                var params = new URLSearchParams();
+                ids.forEach(function (id) { params.append('ids[]', id); });
+                fetch('/courses/' + courseId + '/tasks/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+            }
+        });
+    });
+});
+</script>
+</th:block>
 </body>
 </html>

@@ -2,10 +2,7 @@ package com.theology.tracker.controller;
 
 import com.theology.tracker.dto.NoteFormDto;
 import com.theology.tracker.model.Note;
-import com.theology.tracker.model.NoteParentType;
-import com.theology.tracker.model.WorkItem;
 import com.theology.tracker.service.NoteService;
-import com.theology.tracker.service.NoteService.ParentInfo;
 import com.theology.tracker.service.TopicService;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -32,15 +29,10 @@ public class NoteController {
     }
 
     @GetMapping
-    public String list(
-        @RequestParam(required = false) String parentType,
-        @RequestParam(required = false) Long parentId,
-        Model model
-    ) {
-        if (parentType != null && parentId != null) {
-            NoteParentType type = NoteParentType.valueOf(parentType.toUpperCase());
-            model.addAttribute("notes", noteService.findByParent(type, parentId));
-            model.addAttribute("filterParent", noteService.resolveParent(type, parentId));
+    public String list(@RequestParam(required = false) Long topicId, Model model) {
+        if (topicId != null) {
+            model.addAttribute("notes", noteService.findByTopic(topicId));
+            model.addAttribute("filterTopic", topicService.findById(topicId));
         } else {
             model.addAttribute("notes", noteService.findAll());
         }
@@ -48,14 +40,9 @@ public class NoteController {
     }
 
     @GetMapping("/new")
-    public String newForm(
-        @RequestParam String parentType,
-        @RequestParam Long parentId,
-        Model model
-    ) {
-        NoteParentType type = NoteParentType.valueOf(parentType.toUpperCase());
-        model.addAttribute("parent", noteService.resolveParent(type, parentId));
-        model.addAttribute("allTopics", topicService.findAllOrdered());
+    public String newForm(@RequestParam(required = false) Long topicId, Model model) {
+        model.addAttribute("allTopics", topicService.findAll());
+        model.addAttribute("preselectedTopicId", topicId);
         model.addAttribute("pageTitle", "New Note");
         model.addAttribute("formAction", "/notes");
         return "notes/form";
@@ -65,12 +52,10 @@ public class NoteController {
     public String create(
         @RequestParam String title,
         @RequestParam(defaultValue = "") String body,
-        @RequestParam String parentType,
-        @RequestParam Long parentId,
         @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        Note note = noteService.create(new NoteFormDto(title, body, parentType, parentId, topicIds));
+        Note note = noteService.create(new NoteFormDto(title, body, topicIds));
         ra.addFlashAttribute("successMessage", "Note created.");
         return "redirect:/notes/" + note.getId();
     }
@@ -78,15 +63,21 @@ public class NoteController {
     @GetMapping("/{id}")
     public String show(@PathVariable Long id, Model model) {
         Note note = noteService.findById(id);
-        ParentInfo parent = noteService.resolveParent(note.getPrimaryParentType(), note.getPrimaryParentId());
-        List<WorkItem> availableRefs = noteService.findReferenceableWorkItems().stream()
-            .filter(wi -> note.getWorkItemRefs().stream().noneMatch(r -> r.getId().equals(wi.getId())))
-            .toList();
+        List<Note> backlinks = noteService.findBacklinks(note.getTitle());
         model.addAttribute("note", note);
-        model.addAttribute("parent", parent);
-        model.addAttribute("allTopics", topicService.findAllOrdered());
-        model.addAttribute("availableWorkItems", availableRefs);
+        model.addAttribute("backlinks", backlinks);
+        model.addAttribute("allTopics", topicService.findAll());
         return "notes/show";
+    }
+
+    @GetMapping("/{id}/edit")
+    public String editForm(@PathVariable Long id, Model model) {
+        Note note = noteService.findById(id);
+        model.addAttribute("note", note);
+        model.addAttribute("allTopics", topicService.findAll());
+        model.addAttribute("pageTitle", "Edit Note");
+        model.addAttribute("formAction", "/notes/" + id);
+        return "notes/form";
     }
 
     @PostMapping("/{id}")
@@ -94,33 +85,11 @@ public class NoteController {
         @PathVariable Long id,
         @RequestParam String title,
         @RequestParam(defaultValue = "") String body,
-        @RequestParam String parentType,
-        @RequestParam Long parentId,
         @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        noteService.update(id, new NoteFormDto(title, body, parentType, parentId, topicIds));
+        noteService.update(id, new NoteFormDto(title, body, topicIds));
         ra.addFlashAttribute("successMessage", "Note saved.");
-        return "redirect:/notes/" + id;
-    }
-
-    @GetMapping(value = "/{id}/preview", produces = MediaType.TEXT_PLAIN_VALUE)
-    @ResponseBody
-    public String preview(@PathVariable Long id) {
-        Note note = noteService.findById(id);
-        return note.getBody() != null ? note.getBody() : "";
-    }
-
-    @PostMapping("/{id}/star")
-    public String toggleStar(
-        @PathVariable Long id,
-        @RequestParam(required = false) String returnUrl,
-        RedirectAttributes ra
-    ) {
-        noteService.toggleStar(id);
-        if (returnUrl != null && !returnUrl.isBlank()) {
-            return "redirect:" + returnUrl;
-        }
         return "redirect:/notes/" + id;
     }
 
@@ -128,38 +97,20 @@ public class NoteController {
     @ResponseBody
     public String autosave(@PathVariable Long id, @RequestParam(defaultValue = "") String body) {
         LocalDateTime savedAt = noteService.autoSave(id, body);
-        return "<span class=\"text-muted text-small\" style=\"font-style:italic;\">Saved at "
+        return "<span style=\"font-style:italic;color:var(--text-secondary)\">Saved at "
             + savedAt.format(TIME_FMT) + "</span>";
+    }
+
+    @PostMapping("/{id}/star")
+    public String toggleStar(@PathVariable Long id, RedirectAttributes ra) {
+        noteService.toggleStar(id);
+        return "redirect:/notes/" + id;
     }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes ra) {
-        Note note = noteService.findById(id);
-        ParentInfo parent = noteService.resolveParent(note.getPrimaryParentType(), note.getPrimaryParentId());
         noteService.delete(id);
         ra.addFlashAttribute("successMessage", "Note deleted.");
-        return "redirect:" + parent.url();
-    }
-
-    @PostMapping("/{id}/work-items/attach")
-    public String attachWorkItem(
-        @PathVariable Long id,
-        @RequestParam Long workItemId,
-        RedirectAttributes ra
-    ) {
-        noteService.attachWorkItemRef(id, workItemId);
-        ra.addFlashAttribute("successMessage", "Work item referenced.");
-        return "redirect:/notes/" + id;
-    }
-
-    @PostMapping("/{id}/work-items/{wiId}/detach")
-    public String detachWorkItem(
-        @PathVariable Long id,
-        @PathVariable Long wiId,
-        RedirectAttributes ra
-    ) {
-        noteService.detachWorkItemRef(id, wiId);
-        ra.addFlashAttribute("successMessage", "Reference removed.");
-        return "redirect:/notes/" + id;
+        return "redirect:/notes";
     }
 }

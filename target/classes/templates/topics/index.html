@@ -8,10 +8,10 @@
 <div layout:fragment="content">
 
     <div class="page-header">
-        <div class="d-flex align-center" style="justify-content: space-between;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <h1 class="page-title">Topics</h1>
-                <p class="page-subtitle">Persistent study subjects that accumulate content across courses and time.</p>
+                <p class="page-subtitle">Persistent concepts that accumulate notes and papers over time.</p>
             </div>
             <a th:href="@{/topics/new}" class="btn btn-primary">+ New Topic</a>
         </div>
@@ -21,66 +21,53 @@
         <p>No topics yet. <a th:href="@{/topics/new}">Create your first topic</a> to get started.</p>
     </div>
 
-    <div class="topic-list" th:if="${!#lists.isEmpty(rootTopics)}">
+    <div th:unless="${#lists.isEmpty(rootTopics)}">
         <div th:each="root : ${rootTopics}">
-
-            <!-- Root topic row -->
+            <!-- Root topic -->
             <div class="topic-card">
-                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                    <div style="flex: 1; min-width: 0;">
-                        <div class="d-flex align-center gap-4" style="flex-wrap: wrap;">
-                            <a class="topic-card-title"
-                               th:href="@{/topics/{id}(id=${root.id})}"
-                               th:text="${root.title}">Topic Title</a>
-                            <span class="badge"
-                                  th:text="${root.type.name().replace('_', ' ')}">TYPE</span>
-                        </div>
-                        <p class="text-small text-muted" style="margin: 0.25rem 0 0;"
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+                    <div style="flex:1;min-width:0;">
+                        <a class="topic-card-title"
+                           th:href="@{/topics/{id}(id=${root.id})}"
+                           th:text="${root.title}">Topic</a>
+                        <p class="text-small text-muted" style="margin:0.25rem 0 0;"
                            th:if="${root.description}" th:text="${root.description}"></p>
                         <span class="text-small text-muted"
-                              th:if="${!#lists.isEmpty(root.subtopics)}"
+                              th:unless="${#lists.isEmpty(root.subtopics)}"
                               th:text="${#lists.size(root.subtopics)} + ' subtopic(s)'"></span>
                     </div>
-                    <div class="d-flex gap-2" style="flex-shrink: 0;">
+                    <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                        <a th:href="@{/topics/new(parentTopicId=${root.id})}" class="btn btn-secondary btn-sm">+ Sub</a>
                         <a th:href="@{/topics/{id}/edit(id=${root.id})}" class="btn btn-secondary btn-sm">Edit</a>
                         <form th:action="@{/topics/{id}/delete(id=${root.id})}" method="post" style="display:inline;">
                             <button type="submit" class="btn btn-danger btn-sm"
-                                    th:attr="data-confirm='Delete topic &quot;' + ${root.title} + '&quot;?'">
-                                Delete
-                            </button>
+                                    th:attr="data-confirm='Delete &quot;' + ${root.title} + '&quot;?'">Delete</button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- Subtopic rows (indented) -->
-            <div th:each="sub : ${root.subtopics}"
-                 class="topic-card topic-card-sub">
-                <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                    <div style="flex: 1; min-width: 0;">
-                        <div class="d-flex align-center gap-4" style="flex-wrap: wrap;">
-                            <span class="text-muted" style="font-size: 1rem;">&#8627;</span>
-                            <a class="topic-card-title"
-                               th:href="@{/topics/{id}(id=${sub.id})}"
-                               th:text="${sub.title}">Subtopic Title</a>
-                            <span class="badge"
-                                  th:text="${sub.type.name().replace('_', ' ')}">TYPE</span>
-                        </div>
-                        <p class="text-small text-muted" style="margin: 0.25rem 0 0 1.5rem;"
+            <!-- Recursive subtopics rendered server-side (one level shown; nested levels handled by controller) -->
+            <div th:each="sub : ${root.subtopics}" class="topic-card topic-card-sub" style="margin-left:1.5rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+                    <div style="flex:1;min-width:0;">
+                        <span class="text-muted">↳ </span>
+                        <a class="topic-card-title"
+                           th:href="@{/topics/{id}(id=${sub.id})}"
+                           th:text="${sub.title}">Subtopic</a>
+                        <p class="text-small text-muted" style="margin:0.25rem 0 0 1.25rem;"
                            th:if="${sub.description}" th:text="${sub.description}"></p>
                     </div>
-                    <div class="d-flex gap-2" style="flex-shrink: 0;">
+                    <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                        <a th:href="@{/topics/new(parentTopicId=${sub.id})}" class="btn btn-secondary btn-sm">+ Sub</a>
                         <a th:href="@{/topics/{id}/edit(id=${sub.id})}" class="btn btn-secondary btn-sm">Edit</a>
                         <form th:action="@{/topics/{id}/delete(id=${sub.id})}" method="post" style="display:inline;">
                             <button type="submit" class="btn btn-danger btn-sm"
-                                    th:attr="data-confirm='Delete topic &quot;' + ${sub.title} + '&quot;?'">
-                                Delete
-                            </button>
+                                    th:attr="data-confirm='Delete &quot;' + ${sub.title} + '&quot;?'">Delete</button>
                         </form>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 

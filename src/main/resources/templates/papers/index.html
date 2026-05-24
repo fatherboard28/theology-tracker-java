@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head><title>Papers</title></head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <h1 class="page-title">Papers</h1>
+                <p class="page-subtitle">Turabian Notes-Bibliography academic papers.</p>
+            </div>
+            <a th:href="@{/papers/new}" class="btn btn-primary">+ New Paper</a>
+        </div>
+    </div>
+
+    <div class="empty-state" th:if="${#lists.isEmpty(papers)}">
+        <p>No papers yet. <a th:href="@{/papers/new}">Start your first paper.</a></p>
+    </div>
+
+    <div th:unless="${#lists.isEmpty(papers)}">
+        <div th:each="paper : ${papers}"
+             style="display:flex;align-items:flex-start;gap:1rem;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.2rem;flex-wrap:wrap;">
+                    <a th:href="@{/papers/{id}(id=${paper.id})}" th:text="${paper.title}"
+                       style="font-weight:600;font-size:1rem;"></a>
+                    <span class="badge"
+                          th:text="${paper.status}"
+                          th:style="'background:' + (${paper.status.name()} == 'COMPLETE' ? 'var(--color-success)' : (${paper.status.name()} == 'IN_PROGRESS' ? 'var(--color-primary)' : 'var(--border)')) + ';color:' + (${paper.status.name()} == 'DRAFT' ? 'var(--text-secondary)' : 'white')"></span>
+                </div>
+                <div class="text-muted text-small" th:if="${paper.thesis != null}"
+                     th:text="${#strings.abbreviate(paper.thesis, 120)}"></div>
+                <div class="text-muted text-small" th:if="${paper.author != null}"
+                     th:text="'by ' + ${paper.author}"></div>
+                <div th:unless="${#sets.isEmpty(paper.topics)}"
+                     style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.4rem;">
+                    <a th:each="t : ${paper.topics}"
+                       th:href="@{/topics/{id}(id=${t.id})}"
+                       th:text="${t.title}"
+                       class="topic-tag topic-tag-sm" style="text-decoration:none;"></a>
+                </div>
+            </div>
+            <div style="flex-shrink:0;text-align:right;">
+                <div class="text-secondary text-small"
+                     th:text="${#temporals.format(paper.updatedAt, 'MMM d, yyyy')}"></div>
+                <div class="text-muted text-small" th:if="${paper.wordCount > 0}"
+                     th:text="${paper.wordCount} + ' words'"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

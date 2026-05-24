@@ -8,56 +8,42 @@
 <div layout:fragment="content">
 
     <div class="page-header">
-        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;">
+        <div style="margin-bottom:1rem;">
             <a th:href="@{/topics}" class="btn btn-secondary btn-sm">&larr; Topics</a>
         </div>
         <h1 class="page-title" th:text="${pageTitle}">Topic</h1>
     </div>
 
-    <div class="card" style="max-width: 680px;">
+    <div class="card" style="max-width:640px;">
         <div class="card-body">
-            <form th:action="${formAction}" method="post" th:object="${topic}">
+            <form th:action="${formAction}" method="post">
 
                 <div class="form-group">
                     <label class="form-label required" for="title">Title</label>
                     <input type="text" id="title" name="title" class="form-control"
                            th:value="${topic.title}" placeholder="e.g. Soteriology" required autofocus/>
-                    <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="form-error"></span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="description">Description</label>
                     <textarea id="description" name="description" class="form-control" rows="3"
-                              placeholder="Optional description of this topic..."
+                              placeholder="Optional description..."
                               th:text="${topic.description}"></textarea>
-                    <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}" class="form-error"></span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required" for="type">Type</label>
-                    <select id="type" name="type" class="form-control">
-                        <option th:each="t : ${types}"
-                                th:value="${t.name()}"
-                                th:text="${t.name().replace('_', ' ')}"
-                                th:selected="${topic.type != null and topic.type == t}">
-                        </option>
-                    </select>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="parentTopicId">Parent Topic</label>
                     <select id="parentTopicId" name="parentTopicId" class="form-control">
                         <option value="">— None (root topic) —</option>
-                        <option th:each="p : ${rootTopics}"
-                                th:value="${p.id}"
-                                th:text="${p.title}"
-                                th:selected="${topic.parentTopic != null and topic.parentTopic.id == p.id}">
+                        <option th:each="t : ${allTopics}"
+                                th:value="${t.id}"
+                                th:text="${t.title}"
+                                th:selected="${topic.parentTopic != null and topic.parentTopic.id == t.id}">
                         </option>
                     </select>
-                    <div class="form-hint">Parent topics are limited to one level deep.</div>
                 </div>
 
-                <div class="d-flex gap-4" style="margin-top: 1.5rem;">
+                <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
                     <button type="submit" class="btn btn-primary" th:text="${pageTitle}">Save</button>
                     <a th:href="@{/topics}" class="btn btn-secondary">Cancel</a>
                 </div>

@@ -9,217 +9,79 @@
 
     <div class="page-header">
         <h1 class="page-title">Search</h1>
-        <p class="page-subtitle" th:if="${query != null and !#strings.isEmpty(query)}">
-            Results for <strong th:text="${query}"></strong>
-            <span th:if="${result != null}"
-                  class="text-muted"
-                  th:text="' — ' + ${result.totalCount()} + (${result.totalCount()} == 1 ? ' result' : ' results')">
-            </span>
+        <p class="page-subtitle" th:if="${result != null}">
+            <strong th:text="${result.query()}"></strong>
+            &mdash;
+            <span class="text-muted" th:text="${result.totalCount()} + (${result.totalCount()} == 1 ? ' result' : ' results')"></span>
         </p>
-        <p class="page-subtitle" th:if="${query == null or #strings.isEmpty(query)}">
-            Search across courses, units, topics, work items, notes, and sessions.
-        </p>
+        <p class="page-subtitle" th:if="${result == null}">Search across topics, notes, and papers.</p>
     </div>
 
-    <!-- Search Form -->
-    <div class="card" style="max-width: 640px; margin-bottom: 2rem;">
+    <div class="card" style="max-width:640px;margin-bottom:2rem;">
         <div class="card-body">
-            <form th:action="@{/search}" method="get" class="d-flex gap-4 align-center">
-                <div style="flex: 1;">
-                    <input type="search" name="q"
-                           class="form-control"
-                           th:value="${query}"
-                           placeholder="Search notes, courses, topics, scripture refs..."
-                           autocomplete="off"
-                           autofocus/>
-                    <div class="form-hint" style="margin-top: 8px;">
-                        Searches titles, descriptions, note bodies, and session reflections.
-                        Scripture references (e.g. <code>Rom 8</code>) also match tagged entities.
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary" style="flex-shrink: 0;">Search</button>
+            <form th:action="@{/search}" method="get" style="display:flex;gap:0.75rem;">
+                <input type="search" name="q" class="form-control" th:value="${query}"
+                       placeholder="Search topics, notes, papers…" autocomplete="off" autofocus style="flex:1;"/>
+                <button type="submit" class="btn btn-primary" style="flex-shrink:0;">Search</button>
             </form>
         </div>
     </div>
 
-    <!-- No query yet -->
-    <div th:if="${result == null and (query == null or #strings.isEmpty(query))}" class="empty-state">
-        <p>Enter a query above to search across all your study content.</p>
+    <div th:if="${result == null}" class="empty-state">
+        <p>Enter a query above to search all content.</p>
     </div>
 
-    <!-- No results -->
     <div th:if="${result != null and !result.hasResults()}" class="empty-state">
         <p>No results found for <strong th:text="${query}"></strong>.</p>
     </div>
 
-    <!-- Results -->
     <div th:if="${result != null and result.hasResults()}">
 
-        <!-- Courses -->
-        <div th:if="${!result.courses().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
-                Courses
-                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.courses().size()}"></span>
-            </h3>
-            <div class="card">
-                <div class="card-body" style="padding: 0;">
-                    <div th:each="c, stat : ${result.courses()}"
-                         class="d-flex align-center gap-4"
-                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
-                        <div style="flex: 1; min-width: 0;">
-                            <a th:href="@{/courses/{id}(id=${c.id})}"
-                               th:text="${c.title}"
-                               style="font-weight: 500;">Course</a>
-                            <div class="text-small text-muted" style="margin-top: 0.15rem;"
-                                 th:if="${c.description != null and !#strings.isEmpty(c.description)}"
-                                 th:text="${#strings.abbreviate(c.description, 80)}"></div>
-                        </div>
-                        <span class="badge"
-                              th:classappend="${c.status.name() == 'ACTIVE' ? 'badge-active' : (c.status.name() == 'COMPLETE' ? 'badge-complete' : '')}"
-                              th:text="${c.status.name()}"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Units -->
-        <div th:if="${!result.units().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
-                Units
-                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.units().size()}"></span>
-            </h3>
-            <div class="card">
-                <div class="card-body" style="padding: 0;">
-                    <div th:each="u, stat : ${result.units()}"
-                         class="d-flex align-center gap-4"
-                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
-                        <div style="flex: 1; min-width: 0;">
-                            <a th:href="@{/courses/{cid}/units/{uid}(cid=${u.course.id}, uid=${u.id})}"
-                               th:text="${u.title}"
-                               style="font-weight: 500;">Unit</a>
-                            <div class="text-small text-muted" style="margin-top: 0.15rem;">
-                                <span th:text="${u.course.title}"></span>
-                            </div>
-                        </div>
-                        <span th:if="${u.actualCompletion != null}" class="badge badge-complete">Complete</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Topics -->
-        <div th:if="${!result.topics().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
-                Topics
-                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.topics().size()}"></span>
+        <section th:unless="${#lists.isEmpty(result.topics())}" style="margin-bottom:2rem;">
+            <h3 style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);margin-bottom:0.75rem;">
+                Topics <span class="badge" style="margin-left:0.4rem;" th:text="${#lists.size(result.topics())}"></span>
             </h3>
-            <div class="card">
-                <div class="card-body" style="padding: 0;">
-                    <div th:each="t, stat : ${result.topics()}"
-                         class="d-flex align-center gap-4"
-                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
-                        <div style="flex: 1; min-width: 0;">
-                            <a th:href="@{/topics/{id}(id=${t.id})}"
-                               th:text="${t.title}"
-                               style="font-weight: 500;">Topic</a>
-                            <div class="text-small text-muted" style="margin-top: 0.15rem;"
-                                 th:if="${t.description != null and !#strings.isEmpty(t.description)}"
-                                 th:text="${#strings.abbreviate(t.description, 80)}"></div>
-                        </div>
-                        <span class="badge"
-                              th:text="${t.type.name().replace('_', ' ')}"></span>
-                    </div>
-                </div>
+            <div th:each="t : ${result.topics()}"
+                 style="padding:0.6rem 0;border-bottom:1px solid var(--border);">
+                <a th:href="@{/topics/{id}(id=${t.id})}" th:text="${t.title}" style="font-weight:500;"></a>
+                <div class="text-muted text-small" th:if="${t.description != null}"
+                     th:text="${#strings.abbreviate(t.description, 100)}"></div>
             </div>
-        </div>
-
-        <!-- Work Items -->
-        <div th:if="${!result.workItems().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
-                Work Items
-                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.workItems().size()}"></span>
-            </h3>
-            <div class="card">
-                <div class="card-body" style="padding: 0;">
-                    <div th:each="wi, stat : ${result.workItems()}"
-                         class="d-flex align-center gap-4"
-                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
-                        <div style="flex: 1; min-width: 0;">
-                            <a th:href="@{/work-items/{id}(id=${wi.id})}"
-                               th:text="${wi.title}"
-                               style="font-weight: 500;">Work Item</a>
-                            <div class="text-small text-muted" style="margin-top: 0.15rem;">
-                                <span th:text="${wi.typeLabel}"></span>
-                                <span th:if="${wi.unit != null}"
-                                      th:text="' · ' + ${wi.unit.course.title} + ' › ' + ${wi.unit.title}"></span>
-                                <span th:if="${wi.unit == null and wi.owningTopic != null}"
-                                      th:text="' · Topic: ' + ${wi.owningTopic.title}"></span>
-                            </div>
-                        </div>
-                        <span class="badge"
-                              th:classappend="${wi.status.name() == 'COMPLETE' ? 'badge-complete' : (wi.status.name() == 'IN_PROGRESS' ? 'badge-active' : '')}"
-                              th:text="${wi.status.name().replace('_', ' ')}"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </section>
 
         <!-- Notes -->
-        <div th:if="${!result.notes().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
-                Notes
-                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.notes().size()}"></span>
+        <section th:unless="${#lists.isEmpty(result.notes())}" style="margin-bottom:2rem;">
+            <h3 style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);margin-bottom:0.75rem;">
+                Notes <span class="badge" style="margin-left:0.4rem;" th:text="${#lists.size(result.notes())}"></span>
             </h3>
-            <div class="card">
-                <div class="card-body" style="padding: 0;">
-                    <div th:each="n, stat : ${result.notes()}"
-                         class="d-flex align-center gap-4"
-                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
-                        <div style="flex: 1; min-width: 0;">
-                            <a th:href="@{/notes/{id}(id=${n.id})}"
-                               th:text="${n.title}"
-                               style="font-weight: 500;">Note</a>
-                            <div class="text-small text-muted" style="margin-top: 0.15rem;">
-                                <span th:text="${n.primaryParentType.name().replace('_', ' ')}"></span>
-                                <span th:if="${n.body != null and !#strings.isEmpty(n.body)}"
-                                      th:text="' · ' + ${#strings.abbreviate(n.body, 70)}"></span>
-                            </div>
-                        </div>
-                        <span class="text-small text-muted"
-                              th:text="${#temporals.format(n.updatedAt, 'MMM d, yyyy')}"></span>
-                    </div>
+            <div th:each="n : ${result.notes()}"
+                 style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+                <div style="flex:1;min-width:0;">
+                    <a th:href="@{/notes/{id}(id=${n.id})}" th:text="${n.title}" style="font-weight:500;"></a>
+                    <div class="text-muted text-small" th:unless="${n.body == null or n.body.isBlank()}"
+                         th:text="${#strings.abbreviate(n.body, 100)}"></div>
                 </div>
+                <span class="text-muted text-small" style="flex-shrink:0;"
+                      th:text="${#temporals.format(n.updatedAt, 'MMM d, yyyy')}"></span>
             </div>
-        </div>
+        </section>
 
-        <!-- Study Sessions -->
-        <div th:if="${!result.sessions().isEmpty()}" style="margin-bottom: 2rem;">
-            <h3 style="font-size: var(--text-sm); font-weight: 600; margin-bottom: 8px;">
-                Study Sessions
-                <span class="badge" style="margin-left: 0.5rem;" th:text="${result.sessions().size()}"></span>
+        <!-- Papers -->
+        <section th:unless="${#lists.isEmpty(result.papers())}">
+            <h3 style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);margin-bottom:0.75rem;">
+                Papers <span class="badge" style="margin-left:0.4rem;" th:text="${#lists.size(result.papers())}"></span>
             </h3>
-            <div class="card">
-                <div class="card-body" style="padding: 0;">
-                    <div th:each="s, stat : ${result.sessions()}"
-                         class="d-flex align-center gap-4"
-                         th:style="${!stat.last} ? 'padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);' : 'padding: 0.75rem 1rem;'">
-                        <div style="flex: 1; min-width: 0;">
-                            <a th:href="@{/sessions/{id}(id=${s.id})}"
-                               th:text="${#temporals.format(s.sessionDate, 'MMM d, yyyy')}"
-                               style="font-weight: 500;">Session</a>
-                            <div class="text-small text-muted" style="margin-top: 0.15rem;">
-                                <span th:text="${s.durationMinutes + ' min'}"></span>
-                                <span th:if="${s.workItem != null}"
-                                      th:text="' · ' + ${s.workItem.title}"></span>
-                                <span th:if="${s.reflectionNote != null and !#strings.isEmpty(s.reflectionNote)}"
-                                      th:text="' · ' + ${#strings.abbreviate(s.reflectionNote, 60)}"></span>
-                            </div>
-                        </div>
-                        <a th:href="@{/sessions/{id}(id=${s.id})}" class="btn btn-secondary btn-sm">View</a>
-                    </div>
+            <div th:each="p : ${result.papers()}"
+                 style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+                <div style="flex:1;min-width:0;">
+                    <a th:href="@{/papers/{id}(id=${p.id})}" th:text="${p.title}" style="font-weight:500;"></a>
+                    <div class="text-muted text-small" th:if="${p.thesis != null}"
+                         th:text="${#strings.abbreviate(p.thesis, 100)}"></div>
                 </div>
+                <span class="badge" th:text="${p.status}"></span>
             </div>
-        </div>
+        </section>
 
     </div>
 

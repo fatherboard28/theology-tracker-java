@@ -26,13 +26,6 @@ public class Note {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String body = "";
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private NoteParentType primaryParentType;
-
-    @Column(nullable = false)
-    private Long primaryParentId;
-
     @Column(nullable = false)
     private boolean starred = false;
 
@@ -48,15 +41,7 @@ public class Note {
         joinColumns = @JoinColumn(name = "note_id"),
         inverseJoinColumns = @JoinColumn(name = "topic_id")
     )
-    private Set<Topic> topicTags = new HashSet<>();
-
-    @ManyToMany
-    @JoinTable(
-        name = "note_work_items",
-        joinColumns = @JoinColumn(name = "note_id"),
-        inverseJoinColumns = @JoinColumn(name = "work_item_id")
-    )
-    private Set<WorkItem> workItemRefs = new HashSet<>();
+    private Set<Topic> topics = new HashSet<>();
 
     @PrePersist
     private void prePersist() {

@@ -3,27 +3,14 @@ package com.theology.tracker.repository;
 import com.theology.tracker.model.Course;
 import com.theology.tracker.model.CourseStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
-    List<Course> findByStatus(CourseStatus status);
-
     List<Course> findAllByOrderByCreatedAtDesc();
 
-    List<Course> findByTargetCompletionBetweenAndStatusNot(LocalDate from, LocalDate to, CourseStatus status);
-
-    List<Course> findByTargetCompletionBetween(LocalDate from, LocalDate to);
-
-    @Query("SELECT c FROM Course c JOIN c.topics t WHERE t.id = :topicId ORDER BY c.title")
-    List<Course> findByTopicId(@Param("topicId") Long topicId);
-
-    @Query("SELECT c FROM Course c WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', :q, '%')) ORDER BY c.title")
-    List<Course> searchByTitleOrDescription(@Param("q") String q);
+    List<Course> findByStatusOrderByCreatedAtDesc(CourseStatus status);
 }

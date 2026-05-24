@@ -5,130 +5,112 @@
       layout:decorate="~{layout/base}">
 <head><title th:text="${note.title}">Note</title></head>
 <body>
-<!--
-  Document-style note page.
-  Writing is first-class: full-width contenteditable blocks, no form chrome.
-  Topics: chip badges + popup with search bar.
-  Meta (parent, date, save/delete) lives in the background as muted text.
--->
 <div layout:fragment="content">
 
-    <!-- Raw markdown consumed by NoteBlockEditor at init time -->
-    <div id="note-body-raw" style="display:none;" th:text="${note.body}"></div>
-
-    <!-- Topic data embedded for the JS popup (no Thymeleaf/SpEL JSON risks) -->
+    <!-- Embed topic data for JS popup -->
     <div id="topics-data-container" style="display:none">
         <div th:each="t : ${allTopics}"
              class="topic-data-item"
              th:data-id="${t.id}"
              th:data-title="${t.title}"
-             th:data-is-child="${t.parentTopic != null}"></div>
+             th:data-selected="${note.topics.contains(t)}"></div>
     </div>
 
-    <!-- ── Document page ─────────────────────────────────────────────────── -->
     <div class="doc-page">
 
-        <!-- Subtle back + autosave status -->
+        <!-- Nav bar -->
         <div class="doc-nav">
-            <a th:href="${parent.url()}" class="doc-back-link">
-                ←&ensp;<span th:text="${parent.type().name().replace('_',' ')}">TYPE</span>
-                &thinsp;/&thinsp;
-                <span th:text="${parent.label()}">Parent</span>
-            </a>
+            <a th:href="@{/notes}" class="doc-back-link">&larr; Notes</a>
             <span id="save-status" class="doc-save-status"></span>
         </div>
 
-        <!-- Main form: title + hidden fields (body & topics synced by JS) -->
+        <!-- Main form -->
         <form th:action="@{/notes/{id}(id=${note.id})}" method="post" id="note-main-form">
-            <input type="hidden" name="parentType" th:value="${note.primaryParentType.name()}"/>
-            <input type="hidden" name="parentId"   th:value="${note.primaryParentId}"/>
-            <input type="hidden" name="body" id="note-body-field"/>
-            <!-- Topic hidden inputs managed by JS; pre-populated from server -->
+            <input type="hidden" name="body" id="note-body-field" th:value="${note.body}"/>
             <div id="topic-hidden-inputs">
-                <input th:each="t : ${note.topicTags}" type="hidden" name="topicIds" th:value="${t.id}"/>
+                <input th:each="t : ${note.topics}" type="hidden" name="topicIds" th:value="${t.id}"/>
             </div>
 
-            <!-- Title — the biggest thing on the page -->
-            <input type="text" name="title" id="note-title-input" class="doc-title-input"
-                   th:value="${note.title}" placeholder="Untitled" required autocomplete="off"/>
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+                <input type="text" name="title" id="note-title-input" class="doc-title-input"
+                       th:value="${note.title}" placeholder="Untitled" required autocomplete="off"
+                       style="flex:1;"/>
+                <!-- Star -->
+                <form th:action="@{/notes/{id}/star(id=${note.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-secondary btn-sm"
+                            th:title="${note.starred ? 'Unstar' : 'Star'}">
+                        <span th:text="${note.starred ? '★' : '☆'}">☆</span>
+                    </button>
+                </form>
+            </div>
 
-            <!-- Topic chips + add button -->
-            <div class="doc-topics-row">
+            <!-- Topic chips -->
+            <div class="doc-topics-row" style="margin-bottom:0.75rem;">
                 <div id="topic-chips" class="doc-topic-chips">
-                    <span th:each="t : ${note.topicTags}"
-                          class="doc-topic-chip" th:data-topic-id="${t.id}">
+                    <span th:each="t : ${note.topics}" class="doc-topic-chip" th:data-topic-id="${t.id}">
                         <span th:text="${t.title}"></span>
-                        <button type="button" class="doc-chip-remove"
-                                th:data-topic-id="${t.id}" aria-label="Remove topic">&times;</button>
+                        <button type="button" class="doc-chip-remove" th:data-topic-id="${t.id}">&times;</button>
                     </span>
                 </div>
-                <button type="button" class="doc-add-topic-btn" id="open-topic-popup"># Add topic</button>
+                <button type="button" class="doc-add-topic-btn" id="open-topic-popup"># topics</button>
             </div>
 
-            <!-- Meta row: barely there -->
+            <!-- Meta -->
             <div class="doc-meta">
                 <span>Modified <span th:text="${#temporals.format(note.updatedAt,'MMM d, yyyy')}">date</span></span>
                 &ensp;&middot;&ensp;
                 <button type="submit" class="doc-meta-action">Save</button>
                 &ensp;&middot;&ensp;
                 <button type="submit" class="doc-meta-action doc-meta-delete"
-                        th:attr="formaction=@{/notes/{id}/delete(id=${note.id})},
-                                 data-confirm='Delete &quot;' + ${note.title} + '&quot;?'">Delete</button>
+                        th:formaction="@{/notes/{id}/delete(id=${note.id})}"
+                        th:attr="data-confirm='Delete &quot;' + ${note.title} + '&quot;?'">Delete</button>
             </div>
         </form>
 
-        <!-- ── Block editor ─────────────────────────────────────────────── -->
-        <div class="doc-editor-area">
-            <div id="note-editor" th:data-note-id="${note.id}"></div>
+        <!-- TipTap editor -->
+        <div class="tiptap-wrap">
+            <div id="tiptap-editor"
+                 th:data-note-id="${note.id}"
+                 th:data-body="${note.body}"></div>
         </div>
 
-        <!-- ── Work items: secondary, collapsed ─────────────────────────── -->
-        <details class="doc-secondary">
-            <summary class="doc-secondary-summary">Referenced Work Items</summary>
-            <div class="doc-secondary-body">
-
-                <div th:if="${!#sets.isEmpty(note.workItemRefs)}">
-                    <div th:each="wi : ${note.workItemRefs}"
-                         class="d-flex align-center gap-4"
-                         style="padding:0.5rem 0; border-bottom:1px solid var(--border); flex-wrap:wrap;">
-                        <a th:href="@{/work-items/{id}(id=${wi.id})}"
-                           th:text="${wi.title}" style="flex:1; min-width:0;">Work Item</a>
-                        <span class="badge text-small" th:text="${wi.typeLabel}">Type</span>
-                        <form th:action="@{/notes/{nid}/work-items/{wiid}/detach(nid=${note.id},wiid=${wi.id})}"
-                              method="post" style="display:inline; flex-shrink:0;">
-                            <button type="submit" class="btn btn-secondary btn-sm">Detach</button>
-                        </form>
-                    </div>
-                </div>
-
-                <div th:if="${#sets.isEmpty(note.workItemRefs)}"
-                     class="text-small text-muted" style="font-style:italic; padding:0.5rem 0;">
-                    No work items referenced yet.
-                </div>
-
-                <div style="margin-top:0.75rem;" th:if="${!#lists.isEmpty(availableWorkItems)}">
-                    <form th:action="@{/notes/{id}/work-items/attach(id=${note.id})}" method="post"
-                          class="d-flex gap-2" style="flex-wrap:wrap;">
-                        <select name="workItemId" class="form-control" style="max-width:420px; flex:1;">
-                            <option th:each="wi : ${availableWorkItems}"
-                                    th:value="${wi.id}"
-                                    th:text="${wi.typeLabel + ': ' + wi.title}">Work Item</option>
-                        </select>
-                        <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0;">Attach</button>
-                    </form>
-                </div>
+        <!-- Backlinks -->
+        <details th:unless="${#lists.isEmpty(backlinks)}" style="margin-top:1.5rem;">
+            <summary style="cursor:pointer;font-weight:600;color:var(--text-secondary);font-size:0.85rem;">
+                Backlinks (<span th:text="${#lists.size(backlinks)}">0</span>)
+            </summary>
+            <div style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.4rem;">
+                <a th:each="bl : ${backlinks}"
+                   th:href="@{/notes/{id}(id=${bl.id})}"
+                   th:text="${bl.title}"
+                   style="font-size:0.9rem;"></a>
             </div>
         </details>
 
     </div><!-- .doc-page -->
 
-    <!-- ── Topic search popup ─────────────────────────────────────────────── -->
+    <!-- Bubble menu (hidden; shown on text selection) -->
+    <div id="bubble-menu" class="tiptap-bubble-menu" role="toolbar">
+        <button type="button" data-cmd="bold"        class="tb-btn" title="Bold"><b>B</b></button>
+        <button type="button" data-cmd="italic"      class="tb-btn" title="Italic"><i>I</i></button>
+        <button type="button" data-cmd="strike"      class="tb-btn" title="Strikethrough"><s>S</s></button>
+        <button type="button" data-cmd="code"        class="tb-btn" title="Inline code"><code style="font-size:0.75rem;">{}</code></button>
+        <span class="tb-sep"></span>
+        <button type="button" data-cmd="heading1"    class="tb-btn" title="Heading 1">H1</button>
+        <button type="button" data-cmd="heading2"    class="tb-btn" title="Heading 2">H2</button>
+        <button type="button" data-cmd="heading3"    class="tb-btn" title="Heading 3">H3</button>
+        <span class="tb-sep"></span>
+        <button type="button" data-cmd="bulletList"  class="tb-btn" title="Bullet list">&#8226;</button>
+        <button type="button" data-cmd="orderedList" class="tb-btn" title="Numbered list">1.</button>
+        <button type="button" data-cmd="blockquote"  class="tb-btn" title="Blockquote">&#10077;</button>
+    </div>
+
+    <!-- Topic popup -->
     <div id="topic-popup-overlay" class="tp-overlay" hidden>
-        <div class="tp-dialog" role="dialog" aria-modal="true" aria-label="Add topics">
+        <div class="tp-dialog" role="dialog" aria-modal="true">
             <div class="tp-header">
                 <i data-lucide="search" width="16" height="16" class="tp-search-icon"></i>
-                <input type="search" class="tp-search-input" id="topic-search-input"
-                       placeholder="Search topics…" autocomplete="off"/>
+                <input type="search" class="tp-search-input" id="topic-search-input" placeholder="Search topics…" autocomplete="off"/>
                 <button type="button" class="tp-done-btn" id="close-topic-popup">Done</button>
             </div>
             <div class="tp-list" id="topic-popup-list"></div>
@@ -138,332 +120,213 @@
 </div>
 
 <th:block layout:fragment="scripts">
-<script>
-/* ── Topic Popup ─────────────────────────────────────────────────────────── */
-(function () {
-    'use strict';
+<script type="module">
+/* ── TipTap Notion-like editor for Notes ──────────────────────────────────── */
+import { Editor } from 'https://esm.sh/@tiptap/core@2';
+import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2';
+import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@2';
 
-    var ALL_TOPICS = Array.from(
-        document.querySelectorAll('#topics-data-container .topic-data-item')
-    ).map(function (el) {
-        return {
-            id:      parseInt(el.dataset.id, 10),
-            title:   el.dataset.title,
-            isChild: el.dataset.isChild === 'true'
-        };
+const editorEl   = document.getElementById('tiptap-editor');
+const bodyField  = document.getElementById('note-body-field');
+const statusEl   = document.getElementById('save-status');
+const bubbleMenu = document.getElementById('bubble-menu');
+const noteId     = editorEl.dataset.noteId;
+let saveTimer    = null;
+
+/* Detect existing content: TipTap JSON vs legacy markdown */
+function parseContent(raw) {
+    if (!raw || !raw.trim()) return '<p></p>';
+    try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.type === 'doc') return parsed;
+    } catch (_) {}
+    /* Legacy markdown — render to HTML via marked (already loaded globally) */
+    return window.marked ? marked.parse(raw) : '<p>' + raw + '</p>';
+}
+
+const editor = new Editor({
+    element: editorEl,
+    extensions: [
+        StarterKit,
+        Placeholder.configure({ placeholder: 'Start writing… (use # for headings, * for lists)' }),
+    ],
+    content: parseContent(editorEl.dataset.body),
+    onUpdate() {
+        bodyField.value = JSON.stringify(editor.getJSON());
+        scheduleAutosave();
+    },
+    onSelectionUpdate() { updateBubbleMenu(); },
+    onFocus() { updateBubbleMenu(); },
+    onBlur() {
+        setTimeout(() => {
+            if (!bubbleMenu.matches(':hover')) hideBubbleMenu();
+        }, 150);
+    },
+});
+
+/* Keep body field in sync on form submit */
+document.getElementById('note-main-form').addEventListener('submit', () => {
+    bodyField.value = JSON.stringify(editor.getJSON());
+});
+
+/* ── Autosave ──────────────────────────────────────────────────────────── */
+function scheduleAutosave() {
+    clearTimeout(saveTimer);
+    if (statusEl) statusEl.textContent = 'Saving…';
+    saveTimer = setTimeout(() => {
+        fetch('/notes/' + noteId + '/autosave', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    'body=' + encodeURIComponent(JSON.stringify(editor.getJSON())),
+        }).then(r => r.ok ? r.text() : null)
+          .then(html => {
+              if (!html || !statusEl) return;
+              const tmp = document.createElement('div');
+              tmp.innerHTML = html;
+              statusEl.textContent = tmp.textContent.trim();
+          });
+    }, 800);
+}
+
+/* ── Bubble menu ───────────────────────────────────────────────────────── */
+function hideBubbleMenu() {
+    bubbleMenu.classList.remove('visible');
+}
+
+function updateBubbleMenu() {
+    const { from, to } = editor.state.selection;
+    if (from === to || !editor.isFocused) { hideBubbleMenu(); return; }
+
+    const view   = editor.view;
+    const startC = view.coordsAtPos(from);
+    const endC   = view.coordsAtPos(to - 1);
+
+    /* Position after layout, so the element is rendered to get its size */
+    bubbleMenu.classList.add('visible');
+    requestAnimationFrame(() => {
+        const bRect = bubbleMenu.getBoundingClientRect();
+        const midX  = (startC.left + endC.right) / 2;
+        const topY  = Math.min(startC.top, endC.top) - bRect.height - 8;
+        bubbleMenu.style.left = Math.max(8, midX - bRect.width / 2) + 'px';
+        bubbleMenu.style.top  = Math.max(8, topY) + 'px';
+        updateActiveStates();
     });
+}
+
+function updateActiveStates() {
+    bubbleMenu.querySelectorAll('[data-cmd]').forEach(btn => {
+        const cmd = btn.dataset.cmd;
+        const active =
+            cmd === 'bold'        ? editor.isActive('bold') :
+            cmd === 'italic'      ? editor.isActive('italic') :
+            cmd === 'strike'      ? editor.isActive('strike') :
+            cmd === 'code'        ? editor.isActive('code') :
+            cmd === 'heading1'    ? editor.isActive('heading', { level: 1 }) :
+            cmd === 'heading2'    ? editor.isActive('heading', { level: 2 }) :
+            cmd === 'heading3'    ? editor.isActive('heading', { level: 3 }) :
+            cmd === 'bulletList'  ? editor.isActive('bulletList') :
+            cmd === 'orderedList' ? editor.isActive('orderedList') :
+            cmd === 'blockquote'  ? editor.isActive('blockquote') : false;
+        btn.classList.toggle('active', active);
+    });
+}
+
+bubbleMenu.querySelectorAll('[data-cmd]').forEach(btn => {
+    btn.addEventListener('mousedown', e => {
+        e.preventDefault(); /* Keep editor focused */
+        const cmd = btn.dataset.cmd;
+        const chain = editor.chain().focus();
+        switch (cmd) {
+            case 'bold':        chain.toggleBold().run(); break;
+            case 'italic':      chain.toggleItalic().run(); break;
+            case 'strike':      chain.toggleStrike().run(); break;
+            case 'code':        chain.toggleCode().run(); break;
+            case 'heading1':    chain.toggleHeading({ level: 1 }).run(); break;
+            case 'heading2':    chain.toggleHeading({ level: 2 }).run(); break;
+            case 'heading3':    chain.toggleHeading({ level: 3 }).run(); break;
+            case 'bulletList':  chain.toggleBulletList().run(); break;
+            case 'orderedList': chain.toggleOrderedList().run(); break;
+            case 'blockquote':  chain.toggleBlockquote().run(); break;
+        }
+        updateBubbleMenu();
+    });
+});
+
+/* Click on wrapper focuses editor */
+document.querySelector('.tiptap-wrap').addEventListener('click', () => editor.commands.focus());
+</script>
+
+<script>
+/* ── Topic popup ────────────────────────────────────────────────────────── */
+(function () {
+    var ALL_TOPICS = Array.from(document.querySelectorAll('#topics-data-container .topic-data-item'))
+        .map(function (el) {
+            return { id: parseInt(el.dataset.id, 10), title: el.dataset.title,
+                     selected: el.dataset.selected === 'true' };
+        });
 
     function getSelectedIds() {
-        return Array.from(
-            document.querySelectorAll('#topic-hidden-inputs input[name="topicIds"]')
-        ).map(function (el) { return parseInt(el.value, 10); });
+        return Array.from(document.querySelectorAll('#topic-hidden-inputs input[name="topicIds"]'))
+            .map(function (el) { return parseInt(el.value, 10); });
     }
 
-    function esc(str) {
-        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    function addChip(topicId) {
-        var topic   = ALL_TOPICS.find(function (t) { return t.id === topicId; });
-        if (!topic) return;
-        var chips   = document.getElementById('topic-chips');
-        if (chips.querySelector('[data-topic-id="' + topicId + '"]')) return;
-        var span    = document.createElement('span');
-        span.className      = 'doc-topic-chip';
-        span.dataset.topicId = topicId;
-        span.innerHTML = '<span>' + esc(topic.title) + '</span>' +
-            '<button type="button" class="doc-chip-remove" data-topic-id="' + topicId +
-            '" aria-label="Remove topic">&times;</button>';
+    function addTopic(id) {
+        var t = ALL_TOPICS.find(function (x) { return x.id === id; }); if (!t) return;
+        var c = document.getElementById('topic-hidden-inputs');
+        if (c.querySelector('input[value="' + id + '"]')) return;
+        var inp = document.createElement('input'); inp.type='hidden'; inp.name='topicIds'; inp.value=id; c.appendChild(inp);
+        var chips = document.getElementById('topic-chips');
+        var span = document.createElement('span'); span.className='doc-topic-chip'; span.dataset.topicId=id;
+        span.innerHTML='<span>'+esc(t.title)+'</span><button type="button" class="doc-chip-remove" data-topic-id="'+id+'">&times;</button>';
+        span.querySelector('.doc-chip-remove').addEventListener('click', function () { removeTopic(id); });
         chips.appendChild(span);
-        span.querySelector('.doc-chip-remove').addEventListener('click', function () {
-            removeTopic(topicId);
-        });
     }
 
-    function removeChip(topicId) {
-        var chip = document.querySelector('#topic-chips [data-topic-id="' + topicId + '"]');
-        if (chip) chip.remove();
-    }
-
-    function addTopic(topicId) {
-        var container = document.getElementById('topic-hidden-inputs');
-        if (container.querySelector('input[value="' + topicId + '"]')) return;
-        var inp   = document.createElement('input');
-        inp.type  = 'hidden';
-        inp.name  = 'topicIds';
-        inp.value = topicId;
-        container.appendChild(inp);
-        addChip(topicId);
-    }
-
-    function removeTopic(topicId) {
-        var inp = document.querySelector('#topic-hidden-inputs input[value="' + topicId + '"]');
+    function removeTopic(id) {
+        var inp = document.querySelector('#topic-hidden-inputs input[value="' + id + '"]');
         if (inp) inp.remove();
-        removeChip(topicId);
+        var chip = document.querySelector('#topic-chips [data-topic-id="' + id + '"]');
+        if (chip) chip.remove();
         refreshList();
     }
 
     function renderList(filter) {
-        var listEl      = document.getElementById('topic-popup-list');
-        var selectedIds = getSelectedIds();
-        filter = (filter || '').trim().toLowerCase();
-
-        var filtered = ALL_TOPICS.filter(function (t) {
-            return !filter || t.title.toLowerCase().indexOf(filter) !== -1;
-        });
-
-        if (filtered.length === 0) {
-            listEl.innerHTML = '<div class="tp-empty">No topics found.</div>';
-            return;
-        }
-
+        var listEl = document.getElementById('topic-popup-list');
+        var selected = getSelectedIds();
+        filter = (filter || '').toLowerCase();
+        var filtered = ALL_TOPICS.filter(function (t) { return !filter || t.title.toLowerCase().indexOf(filter) !== -1; });
+        if (!filtered.length) { listEl.innerHTML='<div class="tp-empty">No topics found.</div>'; return; }
         listEl.innerHTML = filtered.map(function (t) {
-            var checked = selectedIds.indexOf(t.id) !== -1;
-            return '<label class="tp-item' + (t.isChild ? ' tp-item-child' : '') +
-                   (checked ? ' tp-item-checked' : '') + '" data-topic-id="' + t.id + '">' +
-                   '<span class="tp-check">' + (checked ? '✓' : '') + '</span>' +
-                   '<span class="tp-item-label">' + esc(t.title) + '</span>' +
-                   '</label>';
+            var chk = selected.indexOf(t.id) !== -1;
+            return '<label class="tp-item' + (chk ? ' tp-item-checked' : '') + '" data-topic-id="' + t.id + '">' +
+                '<span class="tp-check">' + (chk ? '✓' : '') + '</span>' +
+                '<span class="tp-item-label">' + esc(t.title) + '</span></label>';
         }).join('');
-
         listEl.querySelectorAll('.tp-item').forEach(function (el) {
             el.addEventListener('click', function () {
-                var tid     = parseInt(el.dataset.topicId, 10);
-                var checked = getSelectedIds().indexOf(tid) !== -1;
-                if (checked) { removeTopic(tid); } else { addTopic(tid); refreshList(); }
+                var id = parseInt(el.dataset.topicId, 10);
+                if (getSelectedIds().indexOf(id) !== -1) { removeTopic(id); } else { addTopic(id); refreshList(); }
             });
         });
     }
 
-    function refreshList() {
-        var inp = document.getElementById('topic-search-input');
-        renderList(inp ? inp.value : '');
-    }
+    function refreshList() { renderList(document.getElementById('topic-search-input').value); }
 
     var overlay = document.getElementById('topic-popup-overlay');
-
     document.getElementById('open-topic-popup').addEventListener('click', function () {
-        overlay.hidden = false;
-        renderList('');
-        var inp = document.getElementById('topic-search-input');
-        if (inp) { inp.value = ''; inp.focus(); }
-        if (window.lucide) window.lucide.createIcons();
+        overlay.hidden = false; renderList('');
+        var inp = document.getElementById('topic-search-input'); inp.value=''; inp.focus();
+        if (window.lucide) lucide.createIcons();
     });
+    document.getElementById('close-topic-popup').addEventListener('click', function () { overlay.hidden = true; });
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.hidden = true; });
+    document.getElementById('topic-search-input').addEventListener('input', function () { renderList(this.value); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !overlay.hidden) overlay.hidden = true; });
 
-    document.getElementById('close-topic-popup').addEventListener('click', function () {
-        overlay.hidden = true;
-    });
-
-    overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) overlay.hidden = true;
-    });
-
-    document.getElementById('topic-search-input').addEventListener('input', function () {
-        renderList(this.value);
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !overlay.hidden) overlay.hidden = true;
-    });
-
-    /* Wire up any server-rendered chip remove buttons */
     document.querySelectorAll('#topic-chips .doc-chip-remove').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            removeTopic(parseInt(btn.dataset.topicId, 10));
-        });
-    });
-}());
-
-/* ── NoteBlockEditor ─────────────────────────────────────────────────────── */
-(function () {
-    'use strict';
-
-    function NoteBlockEditor(container, markdown, noteId) {
-        this.container  = container;
-        this.noteId     = noteId;
-        this.saveTimer  = null;
-        this.statusEl   = document.getElementById('save-status');
-        this._px        = undefined;
-        this._py        = undefined;
-        this._wantStart = false;
-
-        var self  = this;
-        var raw   = (markdown || '').trim();
-        var texts = raw ? raw.split(/\n{2,}/) : [''];
-        texts.forEach(function (t) { self._addBlock(t); });
-
-        var form = document.getElementById('note-main-form');
-        if (form) {
-            form.addEventListener('submit', function () {
-                var f = document.getElementById('note-body-field');
-                if (f) f.value = self._collectRaw();
-            });
-        }
-    }
-
-    NoteBlockEditor.prototype._addBlock = function (text, afterEl) {
-        var self = this;
-        var div  = document.createElement('div');
-        div.className       = 'nb';
-        div.contentEditable = 'true';
-        div.dataset.raw     = text || '';
-
-        if (text && text.trim()) {
-            div.innerHTML = marked.parse(text);
-        }
-
-        div.addEventListener('mousedown', function (e) { self._px = e.clientX; self._py = e.clientY; });
-        div.addEventListener('focus',     function ()  { self._onFocus(div); });
-        div.addEventListener('blur',      function ()  { self._onBlur(div); });
-        div.addEventListener('keydown',   function (e) { self._onKeyDown(e, div); });
-        div.addEventListener('input',     function ()  { self._onInput(div); });
-
-        if (afterEl) { afterEl.insertAdjacentElement('afterend', div); }
-        else         { this.container.appendChild(div); }
-        return div;
-    };
-
-    NoteBlockEditor.prototype._onFocus = function (div) {
-        div.classList.add('nb-editing');
-        div.textContent = div.dataset.raw || '';
-
-        var px         = this._px, py = this._py;
-        var wantStart  = this._wantStart;
-        this._px = this._py = undefined;
-        this._wantStart = false;
-
-        setTimeout(function () {
-            var range = null, sel = window.getSelection();
-            if (px !== undefined) {
-                if (document.caretPositionFromPoint) {
-                    var pos = document.caretPositionFromPoint(px, py);
-                    if (pos && div.contains(pos.offsetNode)) {
-                        range = document.createRange();
-                        range.setStart(pos.offsetNode, pos.offset);
-                        range.collapse(true);
-                    }
-                } else if (document.caretRangeFromPoint) {
-                    var r = document.caretRangeFromPoint(px, py);
-                    if (r && div.contains(r.startContainer)) range = r;
-                }
-            }
-            if (!range) {
-                range = document.createRange();
-                range.selectNodeContents(div);
-                range.collapse(wantStart); // true = start (ArrowDown), false = end (ArrowUp)
-            }
-            sel.removeAllRanges();
-            sel.addRange(range);
-        }, 0);
-    };
-
-    NoteBlockEditor.prototype._onBlur = function (div) {
-        div.classList.remove('nb-editing');
-        div.dataset.raw = div.textContent;
-        var raw = div.textContent.trim();
-        div.innerHTML = raw ? marked.parse(raw) : '';
-    };
-
-    /* ── Arrow-key helpers ─────────────────────────────────────────────────── */
-
-    NoteBlockEditor.prototype._caretRect = function () {
-        var sel = window.getSelection();
-        if (!sel || !sel.rangeCount) return null;
-        var r = sel.getRangeAt(0).cloneRange();
-        r.collapse(true);
-        var rect = r.getBoundingClientRect();
-        return (rect.top === 0 && rect.left === 0) ? null : rect;
-    };
-
-    NoteBlockEditor.prototype._isOnFirstLine = function (div) {
-        var cr = this._caretRect();
-        if (!cr) return true;
-        var lineH = cr.bottom - cr.top; // actual rendered line height from the caret rect
-        return cr.top < div.getBoundingClientRect().top + lineH;
-    };
-
-    NoteBlockEditor.prototype._isOnLastLine = function (div) {
-        var cr = this._caretRect();
-        if (!cr) return true;
-        var lineH = cr.bottom - cr.top;
-        return cr.bottom > div.getBoundingClientRect().bottom - lineH;
-    };
-
-    /* ── Keydown ───────────────────────────────────────────────────────────── */
-
-    NoteBlockEditor.prototype._onKeyDown = function (e, div) {
-        var self = this;
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            self._addBlock('', div).focus();
-        } else if (e.key === 'Backspace' && div.textContent === '') {
-            e.preventDefault();
-            if (!div.previousElementSibling && !div.nextElementSibling) return;
-            var prev = div.previousElementSibling;
-            div.remove();
-            if (prev) prev.focus();
-        } else if (e.key === 'ArrowUp' && self._isOnFirstLine(div)) {
-            var prevBlock = div.previousElementSibling;
-            if (prevBlock) {
-                e.preventDefault();
-                prevBlock.focus(); // _onFocus defaults to end-of-block (wantStart false)
-            }
-        } else if (e.key === 'ArrowDown' && self._isOnLastLine(div)) {
-            var nextBlock = div.nextElementSibling;
-            if (nextBlock) {
-                e.preventDefault();
-                self._wantStart = true;
-                nextBlock.focus();
-            }
-        }
-    };
-
-    NoteBlockEditor.prototype._onInput = function (div) {
-        div.dataset.raw = div.textContent;
-        this._scheduleAutosave();
-    };
-
-    NoteBlockEditor.prototype._collectRaw = function () {
-        return Array.from(this.container.querySelectorAll('.nb'))
-            .map(function (b) { return (b.dataset.raw || '').replace(/\s+$/, ''); })
-            .join('\n\n').trim();
-    };
-
-    NoteBlockEditor.prototype._scheduleAutosave = function () {
-        var self = this;
-        clearTimeout(this.saveTimer);
-        if (this.statusEl) this.statusEl.textContent = 'Saving…';
-        this.saveTimer = setTimeout(function () { self._autosave(); }, 600);
-    };
-
-    NoteBlockEditor.prototype._autosave = function () {
-        var self = this;
-        var body = this._collectRaw();
-        var field = document.getElementById('note-body-field');
-        if (field) field.value = body;
-
-        fetch('/notes/' + this.noteId + '/autosave', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body:    'body=' + encodeURIComponent(body)
-        })
-        .then(function (r) { return r.ok ? r.text() : null; })
-        .then(function (html) {
-            if (!html || !self.statusEl) return;
-            var tmp = document.createElement('div');
-            tmp.innerHTML = html;
-            self.statusEl.textContent = tmp.textContent.trim();
-        })
-        .catch(function () {
-            if (self.statusEl) self.statusEl.textContent = 'Save failed';
-        });
-    };
-
-    document.addEventListener('DOMContentLoaded', function () {
-        var editorEl = document.getElementById('note-editor');
-        if (!editorEl) return;
-        var rawEl    = document.getElementById('note-body-raw');
-        new NoteBlockEditor(editorEl, rawEl ? rawEl.textContent : '', editorEl.dataset.noteId);
+        btn.addEventListener('click', function () { removeTopic(parseInt(btn.dataset.topicId, 10)); });
     });
 }());
 </script>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title th:text="${paper.title}">Paper</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Topic data -->
+    <div id="topics-data-container" style="display:none">
+        <div th:each="t : ${allTopics}" class="topic-data-item"
+             th:data-id="${t.id}" th:data-title="${t.title}"
+             th:data-selected="${paper.topics.contains(t)}"></div>
+    </div>
+
+    <div class="doc-page">
+
+        <div class="doc-nav">
+            <a th:href="@{/papers}" class="doc-back-link">&larr; Papers</a>
+            <span id="save-status" class="doc-save-status"></span>
+        </div>
+
+        <!-- Meta form (title, thesis, status, topics) -->
+        <form th:action="@{/papers/{id}(id=${paper.id})}" method="post" id="paper-meta-form">
+            <div id="topic-hidden-inputs">
+                <input th:each="t : ${paper.topics}" type="hidden" name="topicIds" th:value="${t.id}"/>
+            </div>
+            <input type="hidden" name="status" th:value="${paper.status.name()}"/>
+
+            <input type="text" name="title" class="doc-title-input"
+                   th:value="${paper.title}" placeholder="Untitled" required autocomplete="off"/>
+
+            <div style="margin:0.4rem 0 0.75rem;">
+                <textarea name="thesis" class="form-control" rows="2"
+                          style="font-size:0.9rem;color:var(--text-secondary);border:none;background:transparent;resize:none;padding:0;"
+                          placeholder="Thesis / abstract…"
+                          th:text="${paper.thesis}"></textarea>
+            </div>
+
+            <!-- Topic chips -->
+            <div class="doc-topics-row" style="margin-bottom:0.75rem;">
+                <div id="topic-chips" class="doc-topic-chips">
+                    <span th:each="t : ${paper.topics}" class="doc-topic-chip" th:data-topic-id="${t.id}">
+                        <span th:text="${t.title}"></span>
+                        <button type="button" class="doc-chip-remove" th:data-topic-id="${t.id}">&times;</button>
+                    </span>
+                </div>
+                <button type="button" class="doc-add-topic-btn" id="open-topic-popup"># topics</button>
+            </div>
+
+            <!-- Status + author inline -->
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+                <select name="status" class="form-control" style="width:auto;font-size:0.85rem;">
+                    <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.name().replace('_',' ')}"
+                            th:selected="${paper.status == s}"></option>
+                </select>
+                <input type="text" name="author" class="form-control" style="width:auto;font-size:0.85rem;"
+                       th:value="${paper.author}" placeholder="Author"/>
+                <span class="text-muted text-small" id="word-count-display"
+                      th:text="${paper.wordCount} + ' words'"></span>
+            </div>
+
+            <div class="doc-meta">
+                <span>Modified <span th:text="${#temporals.format(paper.updatedAt,'MMM d, yyyy')}">date</span></span>
+                &ensp;&middot;&ensp;
+                <button type="submit" class="doc-meta-action">Save metadata</button>
+                &ensp;&middot;&ensp;
+                <button type="submit" class="doc-meta-action doc-meta-delete"
+                        th:formaction="@{/papers/{id}/delete(id=${paper.id})}"
+                        th:attr="data-confirm='Delete &quot;' + ${paper.title} + '&quot;?'">Delete</button>
+            </div>
+        </form>
+
+        <!-- TipTap editor -->
+        <div class="tiptap-wrap">
+            <!-- Toolbar -->
+            <div id="editor-toolbar"
+                 style="display:flex;flex-wrap:wrap;gap:2px;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);background:var(--card-bg);">
+                <button type="button" data-cmd="bold"           class="tb-btn" title="Bold">        <b>B</b></button>
+                <button type="button" data-cmd="italic"         class="tb-btn" title="Italic">      <i>I</i></button>
+                <button type="button" data-cmd="strike"         class="tb-btn" title="Strikethrough"><s>S</s></button>
+                <button type="button" data-cmd="heading1"       class="tb-btn" title="H1">          H1</button>
+                <button type="button" data-cmd="heading2"       class="tb-btn" title="H2">          H2</button>
+                <button type="button" data-cmd="heading3"       class="tb-btn" title="H3">          H3</button>
+                <button type="button" data-cmd="bulletList"     class="tb-btn" title="Bullet list"> &#8226;&#8212;</button>
+                <button type="button" data-cmd="orderedList"    class="tb-btn" title="Numbered list">1.</button>
+                <button type="button" data-cmd="blockquote"     class="tb-btn" title="Blockquote">  &#10077;</button>
+                <button type="button" data-cmd="horizontalRule" class="tb-btn" title="Rule">        &#8213;</button>
+                <span style="flex:1;"></span>
+                <button type="button" id="footnote-panel-btn"   class="tb-btn" title="Footnotes">  fn</button>
+                <button type="button" id="biblio-panel-btn"     class="tb-btn" title="Bibliography">bib</button>
+            </div>
+            <!-- Editor area -->
+            <div id="tiptap-editor"
+                 th:data-paper-id="${paper.id}"
+                 th:data-body="${paper.body}"
+                 th:data-footnotes="${paper.footnotes}"
+                 th:data-bibliography="${paper.bibliography}"></div>
+        </div>
+
+        <!-- Footnotes panel -->
+        <details id="footnote-panel" style="margin-top:1.25rem;">
+            <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--text-secondary);">Footnotes</summary>
+            <div id="footnote-list" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;"></div>
+            <button type="button" id="add-footnote-btn" class="btn btn-secondary btn-sm" style="margin-top:0.5rem;">+ Add footnote</button>
+        </details>
+
+        <!-- Bibliography panel -->
+        <details id="biblio-panel" style="margin-top:1rem;">
+            <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--text-secondary);">Bibliography</summary>
+            <div id="biblio-list" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;"></div>
+            <button type="button" id="add-biblio-btn" class="btn btn-secondary btn-sm" style="margin-top:0.5rem;">+ Add entry</button>
+        </details>
+
+    </div>
+
+    <!-- Bubble menu -->
+    <div id="bubble-menu" class="tiptap-bubble-menu" role="toolbar">
+        <button type="button" data-cmd="bold"        class="tb-btn" title="Bold"><b>B</b></button>
+        <button type="button" data-cmd="italic"      class="tb-btn" title="Italic"><i>I</i></button>
+        <button type="button" data-cmd="strike"      class="tb-btn" title="Strikethrough"><s>S</s></button>
+        <button type="button" data-cmd="code"        class="tb-btn" title="Code"><code style="font-size:0.75rem;">{}</code></button>
+        <span class="tb-sep"></span>
+        <button type="button" data-cmd="heading1"    class="tb-btn" title="Heading 1">H1</button>
+        <button type="button" data-cmd="heading2"    class="tb-btn" title="Heading 2">H2</button>
+        <button type="button" data-cmd="heading3"    class="tb-btn" title="Heading 3">H3</button>
+        <span class="tb-sep"></span>
+        <button type="button" data-cmd="bulletList"  class="tb-btn" title="Bullet list">&#8226;</button>
+        <button type="button" data-cmd="orderedList" class="tb-btn" title="Numbered list">1.</button>
+        <button type="button" data-cmd="blockquote"  class="tb-btn" title="Blockquote">&#10077;</button>
+    </div>
+
+    <!-- Topic popup -->
+    <div id="topic-popup-overlay" class="tp-overlay" hidden>
+        <div class="tp-dialog" role="dialog" aria-modal="true">
+            <div class="tp-header">
+                <i data-lucide="search" width="16" height="16" class="tp-search-icon"></i>
+                <input type="search" class="tp-search-input" id="topic-search-input" placeholder="Search topics…" autocomplete="off"/>
+                <button type="button" class="tp-done-btn" id="close-topic-popup">Done</button>
+            </div>
+            <div class="tp-list" id="topic-popup-list"></div>
+        </div>
+    </div>
+
+</div>
+
+<th:block layout:fragment="scripts">
+<style>
+.tiptap-wrap .tb-btn {
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+.tiptap-wrap .tb-btn:hover,
+.tiptap-wrap .tb-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+</style>
+<script type="module">
+/* ── TipTap editor for Papers ─────────────────────────────────────────────── */
+import { Editor } from 'https://esm.sh/@tiptap/core@2';
+import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2';
+import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@2';
+
+const editorEl   = document.getElementById('tiptap-editor');
+const paperId    = editorEl.dataset.paperId;
+const statusEl   = document.getElementById('save-status');
+const wcDisplay  = document.getElementById('word-count-display');
+const bubbleMenu = document.getElementById('bubble-menu');
+let saveTimer    = null;
+
+function safeJson(s, fallback) { try { return JSON.parse(s); } catch(e) { return fallback; } }
+
+const storedBody   = safeJson(editorEl.dataset.body, null);
+const footnotes    = safeJson(editorEl.dataset.footnotes, []);
+const bibliography = safeJson(editorEl.dataset.bibliography, []);
+
+const editor = new Editor({
+    element: editorEl,
+    extensions: [
+        StarterKit,
+        Placeholder.configure({ placeholder: 'Begin your paper… (use # for headings, * for lists)' }),
+    ],
+    content: storedBody || '<p></p>',
+    onUpdate() { scheduleAutosave(); updateWordCount(); },
+    onSelectionUpdate() { updateBubbleMenu(); },
+    onFocus() { updateBubbleMenu(); },
+    onBlur() {
+        setTimeout(() => {
+            if (!bubbleMenu.matches(':hover')) hideBubbleMenu();
+        }, 150);
+    },
+});
+
+updateWordCount();
+
+/* ── Word count ────────────────────────────────────────────────────────── */
+function updateWordCount() {
+    if (!wcDisplay) return;
+    const text  = editor.getText();
+    const count = text.trim() ? text.trim().split(/\s+/).length : 0;
+    wcDisplay.textContent = count + ' words';
+}
+
+/* ── Autosave ──────────────────────────────────────────────────────────── */
+function scheduleAutosave() {
+    clearTimeout(saveTimer);
+    if (statusEl) statusEl.textContent = 'Saving…';
+    saveTimer = setTimeout(autosave, 800);
+}
+
+function autosave() {
+    const body   = JSON.stringify(editor.getJSON());
+    const fnJson = JSON.stringify(collectList('footnote-list'));
+    const bibJson = JSON.stringify(collectList('biblio-list'));
+    const wc     = editor.getText().trim().split(/\s+/).filter(Boolean).length;
+
+    const params = new URLSearchParams();
+    params.append('body', body);
+    params.append('footnotes', fnJson);
+    params.append('bibliography', bibJson);
+    params.append('wordCount', wc);
+
+    fetch('/papers/' + paperId + '/autosave', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body:    params.toString(),
+    }).then(r => r.ok ? r.json() : null)
+      .then(data => {
+          if (data && statusEl) statusEl.textContent = 'Saved at ' + data.savedAt;
+      });
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────────── */
+document.getElementById('editor-toolbar').querySelectorAll('[data-cmd]').forEach(btn => {
+    btn.addEventListener('click', () => runCmd(btn.dataset.cmd));
+});
+document.getElementById('footnote-panel-btn').addEventListener('click', () => {
+    document.getElementById('footnote-panel').open = !document.getElementById('footnote-panel').open;
+});
+document.getElementById('biblio-panel-btn').addEventListener('click', () => {
+    document.getElementById('biblio-panel').open = !document.getElementById('biblio-panel').open;
+});
+
+/* ── Bubble menu ───────────────────────────────────────────────────────── */
+function hideBubbleMenu() { bubbleMenu.classList.remove('visible'); }
+
+function updateBubbleMenu() {
+    const { from, to } = editor.state.selection;
+    if (from === to || !editor.isFocused) { hideBubbleMenu(); return; }
+
+    const view   = editor.view;
+    const startC = view.coordsAtPos(from);
+    const endC   = view.coordsAtPos(to - 1);
+
+    bubbleMenu.classList.add('visible');
+    requestAnimationFrame(() => {
+        const bRect = bubbleMenu.getBoundingClientRect();
+        const midX  = (startC.left + endC.right) / 2;
+        const topY  = Math.min(startC.top, endC.top) - bRect.height - 8;
+        bubbleMenu.style.left = Math.max(8, midX - bRect.width / 2) + 'px';
+        bubbleMenu.style.top  = Math.max(8, topY) + 'px';
+        updateActiveStates();
+    });
+}
+
+function updateActiveStates() {
+    bubbleMenu.querySelectorAll('[data-cmd]').forEach(btn => {
+        const cmd = btn.dataset.cmd;
+        const active =
+            cmd === 'bold'        ? editor.isActive('bold') :
+            cmd === 'italic'      ? editor.isActive('italic') :
+            cmd === 'strike'      ? editor.isActive('strike') :
+            cmd === 'code'        ? editor.isActive('code') :
+            cmd === 'heading1'    ? editor.isActive('heading', { level: 1 }) :
+            cmd === 'heading2'    ? editor.isActive('heading', { level: 2 }) :
+            cmd === 'heading3'    ? editor.isActive('heading', { level: 3 }) :
+            cmd === 'bulletList'  ? editor.isActive('bulletList') :
+            cmd === 'orderedList' ? editor.isActive('orderedList') :
+            cmd === 'blockquote'  ? editor.isActive('blockquote') : false;
+        btn.classList.toggle('active', active);
+    });
+}
+
+bubbleMenu.querySelectorAll('[data-cmd]').forEach(btn => {
+    btn.addEventListener('mousedown', e => {
+        e.preventDefault();
+        runCmd(btn.dataset.cmd);
+        updateBubbleMenu();
+    });
+});
+
+function runCmd(cmd) {
+    const chain = editor.chain().focus();
+    switch (cmd) {
+        case 'bold':          chain.toggleBold().run(); break;
+        case 'italic':        chain.toggleItalic().run(); break;
+        case 'strike':        chain.toggleStrike().run(); break;
+        case 'code':          chain.toggleCode().run(); break;
+        case 'heading1':      chain.toggleHeading({ level: 1 }).run(); break;
+        case 'heading2':      chain.toggleHeading({ level: 2 }).run(); break;
+        case 'heading3':      chain.toggleHeading({ level: 3 }).run(); break;
+        case 'bulletList':    chain.toggleBulletList().run(); break;
+        case 'orderedList':   chain.toggleOrderedList().run(); break;
+        case 'blockquote':    chain.toggleBlockquote().run(); break;
+        case 'horizontalRule':chain.setHorizontalRule().run(); break;
+    }
+}
+
+/* Click on wrapper focuses editor */
+document.querySelector('.tiptap-wrap').addEventListener('click', e => {
+    if (!e.target.closest('#editor-toolbar')) editor.commands.focus();
+});
+
+/* ── Footnote / Bibliography panels ────────────────────────────────────── */
+function makeEntry(listId, text) {
+    const list = document.getElementById(listId);
+    const row  = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:0.5rem;align-items:flex-start;';
+    const ta = document.createElement('textarea');
+    ta.className = 'form-control'; ta.rows = 2; ta.style.cssText = 'flex:1;font-size:0.85rem;';
+    ta.value = text || '';
+    ta.addEventListener('input', scheduleAutosave);
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'btn btn-danger btn-sm'; del.textContent = '×';
+    del.addEventListener('click', () => { row.remove(); scheduleAutosave(); });
+    row.appendChild(ta); row.appendChild(del);
+    list.appendChild(row);
+}
+
+function collectList(listId) {
+    return Array.from(document.querySelectorAll('#' + listId + ' textarea'))
+        .map(ta => ta.value.trim()).filter(Boolean);
+}
+
+footnotes.forEach(fn => makeEntry('footnote-list', fn));
+bibliography.forEach(b  => makeEntry('biblio-list', b));
+
+document.getElementById('add-footnote-btn').addEventListener('click', () => makeEntry('footnote-list', ''));
+document.getElementById('add-biblio-btn').addEventListener('click',   () => makeEntry('biblio-list', ''));
+</script>
+
+<script>
+/* ── Topic popup ────────────────────────────────────────────────────────── */
+(function () {
+    var ALL_TOPICS = Array.from(document.querySelectorAll('#topics-data-container .topic-data-item'))
+        .map(function (el) { return { id: parseInt(el.dataset.id,10), title: el.dataset.title, selected: el.dataset.selected==='true' }; });
+
+    function getSelectedIds() {
+        return Array.from(document.querySelectorAll('#topic-hidden-inputs input[name="topicIds"]')).map(function(el){ return parseInt(el.value,10); });
+    }
+    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function addTopic(id){
+        var t=ALL_TOPICS.find(function(x){return x.id===id;}); if(!t) return;
+        var c=document.getElementById('topic-hidden-inputs');
+        if(c.querySelector('input[value="'+id+'"]')) return;
+        var inp=document.createElement('input'); inp.type='hidden'; inp.name='topicIds'; inp.value=id; c.appendChild(inp);
+        var chips=document.getElementById('topic-chips');
+        var span=document.createElement('span'); span.className='doc-topic-chip'; span.dataset.topicId=id;
+        span.innerHTML='<span>'+esc(t.title)+'</span><button type="button" class="doc-chip-remove" data-topic-id="'+id+'">&times;</button>';
+        span.querySelector('.doc-chip-remove').addEventListener('click',function(){removeTopic(id);});
+        chips.appendChild(span);
+    }
+    function removeTopic(id){
+        var inp=document.querySelector('#topic-hidden-inputs input[value="'+id+'"]'); if(inp) inp.remove();
+        var chip=document.querySelector('#topic-chips [data-topic-id="'+id+'"]'); if(chip) chip.remove();
+        refreshList();
+    }
+    function renderList(filter){
+        var listEl=document.getElementById('topic-popup-list');
+        var selected=getSelectedIds(); filter=(filter||'').toLowerCase();
+        var filtered=ALL_TOPICS.filter(function(t){return !filter||t.title.toLowerCase().indexOf(filter)!==-1;});
+        if(!filtered.length){listEl.innerHTML='<div class="tp-empty">No topics found.</div>';return;}
+        listEl.innerHTML=filtered.map(function(t){var chk=selected.indexOf(t.id)!==-1;
+            return '<label class="tp-item'+(chk?' tp-item-checked':'')+'" data-topic-id="'+t.id+'"><span class="tp-check">'+(chk?'✓':'')+'</span><span class="tp-item-label">'+esc(t.title)+'</span></label>';
+        }).join('');
+        listEl.querySelectorAll('.tp-item').forEach(function(el){
+            el.addEventListener('click',function(){var id=parseInt(el.dataset.topicId,10); if(getSelectedIds().indexOf(id)!==-1){removeTopic(id);}else{addTopic(id);refreshList();}});
+        });
+    }
+    function refreshList(){renderList(document.getElementById('topic-search-input').value);}
+    var overlay=document.getElementById('topic-popup-overlay');
+    document.getElementById('open-topic-popup').addEventListener('click',function(){overlay.hidden=false;renderList('');var inp=document.getElementById('topic-search-input');inp.value='';inp.focus();if(window.lucide)lucide.createIcons();});
+    document.getElementById('close-topic-popup').addEventListener('click',function(){overlay.hidden=true;});
+    overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.hidden=true;});
+    document.getElementById('topic-search-input').addEventListener('input',function(){renderList(this.value);});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!overlay.hidden)overlay.hidden=true;});
+    document.querySelectorAll('#topic-chips .doc-chip-remove').forEach(function(btn){btn.addEventListener('click',function(){removeTopic(parseInt(btn.dataset.topicId,10));});});
+}());
+</script>
+</th:block>
+</body>
+</html>

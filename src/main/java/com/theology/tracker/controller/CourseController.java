@@ -1,62 +1,54 @@
 package com.theology.tracker.controller;
 
 import com.theology.tracker.dto.CourseFormDto;
+import com.theology.tracker.dto.TaskFormDto;
 import com.theology.tracker.model.Course;
 import com.theology.tracker.model.CourseStatus;
-import com.theology.tracker.model.NoteParentType;
+import com.theology.tracker.model.Task;
+import com.theology.tracker.model.TaskStatus;
 import com.theology.tracker.service.CourseService;
 import com.theology.tracker.service.NoteService;
-import com.theology.tracker.service.ProgressService;
-import com.theology.tracker.service.TopicService;
-import org.springframework.format.annotation.DateTimeFormat;
+import com.theology.tracker.service.PaperService;
+import com.theology.tracker.service.TaskService;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 @RequestMapping("/courses")
 public class CourseController {
 
     private final CourseService courseService;
-    private final TopicService topicService;
+    private final TaskService taskService;
     private final NoteService noteService;
-    private final ProgressService progressService;
+    private final PaperService paperService;
 
-    public CourseController(CourseService courseService, TopicService topicService, NoteService noteService, ProgressService progressService) {
+    public CourseController(CourseService courseService, TaskService taskService,
+                            NoteService noteService, PaperService paperService) {
         this.courseService = courseService;
-        this.topicService = topicService;
+        this.taskService = taskService;
         this.noteService = noteService;
-        this.progressService = progressService;
+        this.paperService = paperService;
     }
 
     @GetMapping
     public String list(Model model) {
-        List<Course> courses = courseService.findAll();
-        Map<Long, Integer> progressMap = new LinkedHashMap<>();
-        Map<Long, Integer> loggedMinutesMap = new LinkedHashMap<>();
-        courses.forEach(c -> {
-            progressMap.put(c.getId(), courseService.calculateProgress(c));
-            loggedMinutesMap.put(c.getId(), progressService.totalMinutesForCourse(c.getId()));
-        });
-        model.addAttribute("courses", courses);
-        model.addAttribute("progressMap", progressMap);
-        model.addAttribute("loggedMinutesMap", loggedMinutesMap);
+        model.addAttribute("courses", courseService.findAll());
+        model.addAttribute("statuses", CourseStatus.values());
         return "courses/index";
     }
 
     @GetMapping("/new")
     public String newForm(Model model) {
-        model.addAttribute("course", new Course());
         model.addAttribute("statuses", CourseStatus.values());
-        model.addAttribute("allTopics", topicService.findAllOrdered());
-        model.addAttribute("formAction", "/courses");
         model.addAttribute("pageTitle", "New Course");
+        model.addAttribute("formAction", "/courses");
         return "courses/form";
     }
 
@@ -65,37 +57,37 @@ public class CourseController {
         @RequestParam String title,
         @RequestParam(required = false) String description,
         @RequestParam(defaultValue = "ACTIVE") String status,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetCompletion,
-        @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        CourseFormDto form = new CourseFormDto(title, description, status, startDate, targetCompletion, topicIds);
-        Course course = courseService.create(form);
-        ra.addFlashAttribute("successMessage", "Course \"" + course.getTitle() + "\" created.");
+        Course course = courseService.create(new CourseFormDto(title, description, status));
+        ra.addFlashAttribute("successMessage", "Course created.");
         return "redirect:/courses/" + course.getId();
     }
 
     @GetMapping("/{id}")
     public String show(@PathVariable Long id, Model model) {
         Course course = courseService.findById(id);
+        List<Task> tasks = taskService.findByCourse(id);
+        List<Task> toDo = tasks.stream().filter(t -> t.getStatus() == TaskStatus.TO_DO).toList();
+        List<Task> inProgress = tasks.stream().filter(t -> t.getStatus() == TaskStatus.IN_PROGRESS).toList();
+        List<Task> done = tasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).toList();
+
         model.addAttribute("course", course);
-        model.addAttribute("progress", courseService.calculateProgress(course));
-        model.addAttribute("units", course.getUnits());
+        model.addAttribute("toDo", toDo);
+        model.addAttribute("inProgress", inProgress);
+        model.addAttribute("done", done);
+        model.addAttribute("allNotes", noteService.findAll());
+        model.addAttribute("allPapers", paperService.findAll());
         model.addAttribute("statuses", CourseStatus.values());
-        model.addAttribute("notes", noteService.findByParent(NoteParentType.COURSE, id));
-        model.addAttribute("totalLoggedMinutes", progressService.totalMinutesForCourse(id));
         return "courses/show";
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        Course course = courseService.findById(id);
-        model.addAttribute("course", course);
+        model.addAttribute("course", courseService.findById(id));
         model.addAttribute("statuses", CourseStatus.values());
-        model.addAttribute("allTopics", topicService.findAllOrdered());
-        model.addAttribute("formAction", "/courses/" + id);
         model.addAttribute("pageTitle", "Edit Course");
+        model.addAttribute("formAction", "/courses/" + id);
         return "courses/form";
     }
 
@@ -105,13 +97,9 @@ public class CourseController {
         @RequestParam String title,
         @RequestParam(required = false) String description,
         @RequestParam(defaultValue = "ACTIVE") String status,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetCompletion,
-        @RequestParam(required = false) List<Long> topicIds,
         RedirectAttributes ra
     ) {
-        CourseFormDto form = new CourseFormDto(title, description, status, startDate, targetCompletion, topicIds);
-        courseService.update(id, form);
+        courseService.update(id, new CourseFormDto(title, description, status));
         ra.addFlashAttribute("successMessage", "Course updated.");
         return "redirect:/courses/" + id;
     }
@@ -123,14 +111,118 @@ public class CourseController {
         return "redirect:/courses";
     }
 
-    @PostMapping("/{id}/status")
-    public String changeStatus(
-        @PathVariable Long id,
-        @RequestParam String status,
+    // --- Task CRUD ---
+
+    @PostMapping("/{courseId}/tasks")
+    public String createTask(
+        @PathVariable Long courseId,
+        @RequestParam String title,
+        @RequestParam(required = false) String description,
+        @RequestParam(defaultValue = "TO_DO") String status,
+        @RequestParam(required = false) String dueDate,
         RedirectAttributes ra
     ) {
-        courseService.changeStatus(id, status);
-        ra.addFlashAttribute("successMessage", "Status updated.");
-        return "redirect:/courses/" + id;
+        LocalDate due = dueDate != null && !dueDate.isBlank() ? LocalDate.parse(dueDate) : null;
+        taskService.create(courseId, new TaskFormDto(title, description, status, due));
+        ra.addFlashAttribute("successMessage", "Task added.");
+        return "redirect:/courses/" + courseId;
+    }
+
+    @PostMapping("/{courseId}/tasks/{taskId}")
+    public String updateTask(
+        @PathVariable Long courseId,
+        @PathVariable Long taskId,
+        @RequestParam String title,
+        @RequestParam(required = false) String description,
+        @RequestParam(defaultValue = "TO_DO") String status,
+        @RequestParam(required = false) String dueDate,
+        RedirectAttributes ra
+    ) {
+        LocalDate due = dueDate != null && !dueDate.isBlank() ? LocalDate.parse(dueDate) : null;
+        taskService.update(taskId, new TaskFormDto(title, description, status, due));
+        ra.addFlashAttribute("successMessage", "Task updated.");
+        return "redirect:/courses/" + courseId;
+    }
+
+    @PostMapping("/{courseId}/tasks/{taskId}/status")
+    @ResponseBody
+    public String updateTaskStatus(
+        @PathVariable Long courseId,
+        @PathVariable Long taskId,
+        @RequestParam String status
+    ) {
+        taskService.updateStatus(taskId, status);
+        return "ok";
+    }
+
+    @PostMapping(value = "/{courseId}/tasks/reorder", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @ResponseBody
+    public String reorderTasks(
+        @PathVariable Long courseId,
+        @RequestParam("ids[]") List<Long> ids
+    ) {
+        taskService.reorder(courseId, ids);
+        return "ok";
+    }
+
+    @PostMapping("/{courseId}/tasks/{taskId}/delete")
+    public String deleteTask(
+        @PathVariable Long courseId,
+        @PathVariable Long taskId,
+        RedirectAttributes ra
+    ) {
+        taskService.delete(taskId);
+        ra.addFlashAttribute("successMessage", "Task deleted.");
+        return "redirect:/courses/" + courseId;
+    }
+
+    // --- Task attachments ---
+
+    @PostMapping("/{courseId}/tasks/{taskId}/notes/attach")
+    public String attachNote(
+        @PathVariable Long courseId,
+        @PathVariable Long taskId,
+        @RequestParam Long noteId,
+        RedirectAttributes ra
+    ) {
+        taskService.attachNote(taskId, noteId);
+        ra.addFlashAttribute("successMessage", "Note attached.");
+        return "redirect:/courses/" + courseId;
+    }
+
+    @PostMapping("/{courseId}/tasks/{taskId}/notes/{noteId}/detach")
+    public String detachNote(
+        @PathVariable Long courseId,
+        @PathVariable Long taskId,
+        @PathVariable Long noteId,
+        RedirectAttributes ra
+    ) {
+        taskService.detachNote(taskId, noteId);
+        ra.addFlashAttribute("successMessage", "Note removed.");
+        return "redirect:/courses/" + courseId;
+    }
+
+    @PostMapping("/{courseId}/tasks/{taskId}/papers/attach")
+    public String attachPaper(
+        @PathVariable Long courseId,
+        @PathVariable Long taskId,
+        @RequestParam Long paperId,
+        RedirectAttributes ra
+    ) {
+        taskService.attachPaper(taskId, paperId);
+        ra.addFlashAttribute("successMessage", "Paper attached.");
+        return "redirect:/courses/" + courseId;
+    }
+
+    @PostMapping("/{courseId}/tasks/{taskId}/papers/{paperId}/detach")
+    public String detachPaper(
+        @PathVariable Long courseId,
+        @PathVariable Long taskId,
+        @PathVariable Long paperId,
+        RedirectAttributes ra
+    ) {
+        taskService.detachPaper(taskId, paperId);
+        ra.addFlashAttribute("successMessage", "Paper removed.");
+        return "redirect:/courses/" + courseId;
     }
 }

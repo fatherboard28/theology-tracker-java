@@ -25,15 +25,12 @@ public class Topic {
 
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TopicType type = TopicType.OTHER;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_topic_id")
     private Topic parentTopic;
 
-    @OneToMany(mappedBy = "parentTopic")
+    @OneToMany(mappedBy = "parentTopic", fetch = FetchType.LAZY)
+    @OrderBy("title ASC")
     private List<Topic> subtopics = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)

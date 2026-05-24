@@ -3,61 +3,47 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
-<head>
-    <title th:text="${filterParent != null ? filterParent.label() + ' — Notes' : 'All Notes'}">Notes</title>
-</head>
+<head><title>Notes</title></head>
 <body>
 <div layout:fragment="content">
 
     <div class="page-header">
-        <div class="d-flex align-center gap-4" style="margin-bottom: 1rem;" th:if="${filterParent != null}">
-            <a th:href="${filterParent.url()}" class="btn btn-secondary btn-sm">&larr; Back</a>
-        </div>
-        <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <h1 class="page-title"
-                    th:text="${filterParent != null ? filterParent.label() + ' — Notes' : 'All Notes'}">Notes</h1>
-                <p class="page-subtitle" th:if="${filterParent == null}">All notes across courses, topics, and methods.</p>
+                    th:text="${filterTopic != null ? filterTopic.title + ' — Notes' : 'All Notes'}">Notes</h1>
+                <p class="page-subtitle" th:if="${filterTopic == null}">All freestanding notes tagged to topics.</p>
             </div>
-            <a th:if="${filterParent != null}"
-               th:href="@{/notes/new(parentType=${filterParent.type().name()},parentId=${filterParent.id()})}"
-               class="btn btn-primary">+ New Note</a>
+            <a th:href="@{/notes/new(topicId=${filterTopic?.id})}" class="btn btn-primary">+ New Note</a>
         </div>
     </div>
 
     <div class="empty-state" th:if="${#lists.isEmpty(notes)}">
-        <p th:if="${filterParent != null}">No notes yet.
-            <a th:href="@{/notes/new(parentType=${filterParent.type().name()},parentId=${filterParent.id()})}">
-                Create the first note</a> for this
-            <span th:text="${filterParent.type().name().toLowerCase().replace('_',' ')}">entity</span>.
-        </p>
-        <p th:if="${filterParent == null}">No notes yet. Create notes from within a course, topic, or other entity.</p>
+        <p>No notes yet. <a th:href="@{/notes/new}">Create your first note.</a></p>
     </div>
 
-    <div class="note-list" th:if="${!#lists.isEmpty(notes)}">
-        <div class="note-card" th:each="note : ${notes}">
-            <div class="d-flex align-center" style="justify-content: space-between; gap: 1rem;">
-                <div style="flex: 1; min-width: 0;">
-                    <div class="d-flex align-center gap-4" style="margin-bottom: 0.25rem; flex-wrap: wrap;">
-                        <a class="note-card-title"
-                           th:href="@{/notes/{id}(id=${note.id})}"
-                           th:text="${note.title}">Note Title</a>
-                        <span class="text-small text-muted"
-                              th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}">date</span>
-                    </div>
-                    <div class="note-preview"
-                         th:if="${note.body != null and !note.body.isBlank()}"
-                         th:text="${#strings.abbreviate(note.body, 120)}"></div>
-                    <div th:if="${!#sets.isEmpty(note.topicTags)}"
-                         class="topic-tags-row" style="margin-top: 0.35rem;">
-                        <span th:each="topic : ${note.topicTags}" class="topic-tag topic-tag-sm">
-                            <a th:href="@{/topics/{id}(id=${topic.id})}" th:text="${topic.title}">Topic</a>
-                        </span>
-                    </div>
+    <div th:unless="${#lists.isEmpty(notes)}">
+        <div th:each="note : ${notes}"
+             style="display:flex;align-items:flex-start;gap:1rem;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.2rem;">
+                    <a th:href="@{/notes/{id}(id=${note.id})}" th:text="${note.title}"
+                       style="font-weight:600;font-size:1rem;"></a>
+                    <span th:if="${note.starred}" style="color:var(--color-warning);">★</span>
                 </div>
-                <a th:href="@{/notes/{id}(id=${note.id})}" class="btn btn-secondary btn-sm"
-                   style="flex-shrink: 0;">Open</a>
+                <div class="text-muted text-small"
+                     th:unless="${note.body == null or note.body.isBlank()}"
+                     th:text="${#strings.abbreviate(note.body, 140)}"></div>
+                <div th:unless="${#sets.isEmpty(note.topics)}"
+                     style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.4rem;">
+                    <a th:each="t : ${note.topics}"
+                       th:href="@{/topics/{id}(id=${t.id})}"
+                       th:text="${t.title}"
+                       class="topic-tag topic-tag-sm" style="text-decoration:none;"></a>
+                </div>
             </div>
+            <span class="text-secondary text-small" style="flex-shrink:0;padding-top:0.2rem;"
+                  th:text="${#temporals.format(note.updatedAt, 'MMM d, yyyy')}"></span>
         </div>
     </div>
 

@@ -3,90 +3,65 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
-<head><title>Settings &amp; Export</title></head>
+<head><title>Settings</title></head>
 <body>
 <div layout:fragment="content">
 
     <div class="page-header">
-        <h1 class="page-title">Settings &amp; Export</h1>
-        <p class="page-subtitle">Export your data for backup or import a previous backup.</p>
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">Preferences for your local Theology Tracker.</p>
     </div>
 
-    <!-- Export Section -->
-    <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-header">
-            <h2 class="card-title">Export Data</h2>
-        </div>
+    <div class="card" style="max-width:560px;">
         <div class="card-body">
-            <p style="margin-bottom: 1.25rem; color: var(--text-secondary);">
-                Export a complete snapshot of all your courses, units, topics, work items, notes,
-                sessions, methods, and relationships. The JSON export is fully re-importable.
-            </p>
+            <form th:action="@{/settings}" method="post">
 
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <a th:href="@{/export/json}" class="btn btn-primary">
-                    <i data-lucide="download" width="16" height="16"></i>
-                    Download JSON Export
-                </a>
-                <a th:href="@{/export/markdown}" class="btn btn-secondary">
-                    <i data-lucide="download" width="16" height="16"></i>
-                    Download Markdown Notes
-                </a>
-            </div>
-
-            <div class="form-hint" style="margin-top: 1rem;">
-                <p><strong>JSON export</strong> — All entities and relationships. Suitable for backup and full restore via import.</p>
-                <p><strong>Markdown export</strong> — All notes organized by parent entity, plus session reflections. Read-only; not re-importable.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Import Section -->
-    <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-header">
-            <h2 class="card-title">Import Data</h2>
-        </div>
-        <div class="card-body">
-            <div class="flash flash-error" style="margin-bottom: 1rem;">
-                <strong>Warning:</strong> Importing will permanently replace ALL existing data with the contents of the import file.
-                This action cannot be undone. Export a backup first if needed.
-            </div>
-
-            <form th:action="@{/import}" method="post" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label class="form-label" for="file">Select JSON export file</label>
-                    <input type="file" id="file" name="file" accept=".json" class="form-control" required/>
-                    <p class="form-hint">Select a <code>.json</code> file previously exported from Theology Tracker.</p>
+                    <label class="form-label" for="defaultAuthor">Default Author Name</label>
+                    <input type="text" id="defaultAuthor" name="defaultAuthor" class="form-control"
+                           th:value="${defaultAuthor}" placeholder="Your name (pre-filled on new papers)"/>
+                    <div class="form-hint">This name is pre-filled when you create a new paper.</div>
                 </div>
 
-                <div x-data="{ confirmed: false }">
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" x-model="confirmed"/>
-                            I understand this will replace all existing data
-                        </label>
+                <div class="form-group" style="margin-top:1.5rem;">
+                    <label class="form-label">Theme</label>
+                    <div style="display:flex;gap:0.75rem;margin-top:0.35rem;">
+                        <button type="button" id="theme-light-btn" class="btn btn-secondary btn-sm">Light</button>
+                        <button type="button" id="theme-dark-btn" class="btn btn-secondary btn-sm">Dark</button>
                     </div>
-                    <button type="submit" class="btn btn-danger" :disabled="!confirmed">
-                        Import and Replace All Data
-                    </button>
+                    <div class="form-hint">Theme preference is saved locally in your browser.</div>
+                </div>
+
+                <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Info Section -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">About Your Data</h2>
-        </div>
+    <div class="card" style="max-width:560px;margin-top:1.5rem;">
         <div class="card-body">
-            <p style="color: var(--text-secondary);">
+            <h2 style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">About Your Data</h2>
+            <p class="text-muted text-small">
                 All data is stored locally in a SQLite database file. No data is ever sent to external services.
-                The database file is at <code>./data/theology.db</code> — copying that file is a complete backup.
+                Copy <code>data/theology.db</code> for a complete backup.
             </p>
         </div>
     </div>
 
 </div>
+
+<th:block layout:fragment="scripts">
+<script>
+document.getElementById('theme-light-btn').addEventListener('click', function () {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'light');
+});
+document.getElementById('theme-dark-btn').addEventListener('click', function () {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('theme', 'dark');
+});
+</script>
+</th:block>
 </body>
 </html>
