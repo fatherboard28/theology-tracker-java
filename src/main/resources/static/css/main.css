@@ -1983,62 +1983,90 @@ a.cal-week-date:hover { color: var(--accent); }
 
 /* ── TipTap / Notion-like editor ─────────────────────────────────────────── */
 
+/* ── Turabian paper editor ───────────────────────────────────────────── */
 .tiptap-wrap {
     margin-top: 1.25rem;
     border: 1px solid var(--border);
     border-radius: 8px;
     cursor: text;
     transition: border-color var(--duration) var(--ease);
-    background: var(--bg);
+    background: var(--card-bg);
 }
 .tiptap-wrap:focus-within {
     border-color: var(--accent);
 }
+/* Paper canvas: serif, 12 pt, double-spaced (Turabian §A.1) */
 .tiptap-wrap .ProseMirror {
     outline: none;
-    min-height: 480px;
-    padding: 1.5rem 2rem;
-    line-height: 1.8;
-    font-size: 1rem;
+    min-height: 600px;
+    padding: 2rem 3rem;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 12pt;
+    line-height: 2;
     color: var(--text-primary);
 }
-.tiptap-wrap .ProseMirror > * + * { margin-top: 0.5em; }
-.tiptap-wrap .ProseMirror h1 { font-size: 1.875rem; font-weight: 700; line-height: 1.25; margin-top: 1.5rem; }
-.tiptap-wrap .ProseMirror h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; margin-top: 1.25rem; }
-.tiptap-wrap .ProseMirror h3 { font-size: 1.2rem; font-weight: 600; line-height: 1.4; margin-top: 1rem; }
+.tiptap-wrap .ProseMirror > * + * { margin-top: 0; }
+/* Extra blank line before each heading (Turabian §A.2) */
+.tiptap-wrap .ProseMirror > * + h1,
+.tiptap-wrap .ProseMirror > * + h2,
+.tiptap-wrap .ProseMirror > * + h3 { margin-top: 1em; }
+/* Body paragraphs: ½″ first-line indent, no block spacing */
+.tiptap-wrap .ProseMirror p { margin: 0; text-indent: 0.5in; }
+/* Headings: same size as body, no indent; alignment/weight per level */
+.tiptap-wrap .ProseMirror h1,
+.tiptap-wrap .ProseMirror h2,
+.tiptap-wrap .ProseMirror h3 {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 12pt;
+    line-height: 2;
+    text-indent: 0;
+    margin-bottom: 0;
+}
+/* H1 — centered, bold (level 1) */
+.tiptap-wrap .ProseMirror h1 { font-weight: bold;   font-style: normal; text-align: center; }
+/* H2 — centered, regular (level 2) */
+.tiptap-wrap .ProseMirror h2 { font-weight: normal; font-style: normal; text-align: center; }
+/* H3 — flush left, bold (level 3) */
+.tiptap-wrap .ProseMirror h3 { font-weight: bold;   font-style: normal; text-align: left;   }
+/* Lists */
 .tiptap-wrap .ProseMirror ul,
-.tiptap-wrap .ProseMirror ol { padding-left: 1.5rem; }
-.tiptap-wrap .ProseMirror li > p { margin: 0; }
+.tiptap-wrap .ProseMirror ol { padding-left: 1in; margin: 0; }
+.tiptap-wrap .ProseMirror li > p { margin: 0; text-indent: 0; }
+/* Inline code */
 .tiptap-wrap .ProseMirror code {
     background: var(--card-bg);
-    padding: 0.15rem 0.35rem;
+    padding: 0.1rem 0.3rem;
     border-radius: 3px;
-    font-family: var(--font-mono, monospace);
-    font-size: 0.875em;
+    font-family: 'Courier New', monospace;
+    font-size: 10pt;
     color: var(--accent);
 }
 .tiptap-wrap .ProseMirror pre {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem;
     overflow-x: auto;
-    font-family: var(--font-mono, monospace);
-    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+    font-size: 10pt;
 }
 .tiptap-wrap .ProseMirror pre code { background: none; padding: 0; color: inherit; }
+/* Block quotation: single-spaced, indented ½″ each side (Turabian §25.2) */
 .tiptap-wrap .ProseMirror blockquote {
-    border-left: 3px solid var(--accent);
-    padding-left: 1rem;
-    color: var(--text-secondary);
-    margin-left: 0;
+    border-left: none;
+    padding-left: 0;
+    color: var(--text-primary);
+    margin-left: 0.5in;
+    margin-right: 0.5in;
+    line-height: 1.5;
 }
 .tiptap-wrap .ProseMirror hr {
     border: none;
     border-top: 1px solid var(--border);
     margin: 1.5rem 0;
 }
-/* Placeholder */
+/* Placeholder — suppress first-line indent on empty first paragraph */
+.tiptap-wrap .ProseMirror p.is-empty:first-child { text-indent: 0; }
 .tiptap-wrap .ProseMirror p.is-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;

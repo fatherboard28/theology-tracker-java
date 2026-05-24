@@ -83,19 +83,19 @@
             <!-- Toolbar -->
             <div id="editor-toolbar"
                  style="display:flex;flex-wrap:wrap;gap:2px;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);background:var(--card-bg);">
-                <button type="button" data-cmd="bold"           class="tb-btn" title="Bold">        <b>B</b></button>
-                <button type="button" data-cmd="italic"         class="tb-btn" title="Italic">      <i>I</i></button>
-                <button type="button" data-cmd="strike"         class="tb-btn" title="Strikethrough"><s>S</s></button>
-                <button type="button" data-cmd="heading1"       class="tb-btn" title="H1">          H1</button>
-                <button type="button" data-cmd="heading2"       class="tb-btn" title="H2">          H2</button>
-                <button type="button" data-cmd="heading3"       class="tb-btn" title="H3">          H3</button>
-                <button type="button" data-cmd="bulletList"     class="tb-btn" title="Bullet list"> &#8226;&#8212;</button>
-                <button type="button" data-cmd="orderedList"    class="tb-btn" title="Numbered list">1.</button>
-                <button type="button" data-cmd="blockquote"     class="tb-btn" title="Blockquote">  &#10077;</button>
-                <button type="button" data-cmd="horizontalRule" class="tb-btn" title="Rule">        &#8213;</button>
+                <button type="button" data-cmd="bold"        class="tb-btn" title="Bold"><b>B</b></button>
+                <button type="button" data-cmd="italic"      class="tb-btn" title="Italic"><i>I</i></button>
+                <span class="tb-sep" style="display:inline-block;width:1px;height:1.1em;background:var(--border);margin:0 3px;vertical-align:middle;"></span>
+                <button type="button" data-cmd="heading1"    class="tb-btn" title="Heading 1 — centered, bold">H1</button>
+                <button type="button" data-cmd="heading2"    class="tb-btn" title="Heading 2 — centered, regular">H2</button>
+                <button type="button" data-cmd="heading3"    class="tb-btn" title="Heading 3 — flush left, bold">H3</button>
+                <span class="tb-sep" style="display:inline-block;width:1px;height:1.1em;background:var(--border);margin:0 3px;vertical-align:middle;"></span>
+                <button type="button" data-cmd="bulletList"  class="tb-btn" title="Bullet list">&#8226;&#8212;</button>
+                <button type="button" data-cmd="orderedList" class="tb-btn" title="Numbered list">1.</button>
+                <button type="button" data-cmd="blockquote"  class="tb-btn" title="Block Quotation — indented ½″, single-spaced (5+ lines)">&#10077;</button>
                 <span style="flex:1;"></span>
-                <button type="button" id="footnote-panel-btn"   class="tb-btn" title="Footnotes">  fn</button>
-                <button type="button" id="biblio-panel-btn"     class="tb-btn" title="Bibliography">bib</button>
+                <button type="button" id="footnote-panel-btn" class="tb-btn" title="Notes panel">Notes</button>
+                <button type="button" id="biblio-panel-btn"   class="tb-btn" title="Bibliography panel">Bib.</button>
             </div>
             <!-- Editor area -->
             <div id="tiptap-editor"
@@ -105,9 +105,9 @@
                  th:data-bibliography="${paper.bibliography}"></div>
         </div>
 
-        <!-- Footnotes panel -->
+        <!-- Notes panel -->
         <details id="footnote-panel" style="margin-top:1.25rem;">
-            <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--text-secondary);">Footnotes</summary>
+            <summary style="cursor:pointer;font-weight:600;font-size:0.9rem;color:var(--text-secondary);">Notes</summary>
             <div id="footnote-list" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;"></div>
             <button type="button" id="add-footnote-btn" class="btn btn-secondary btn-sm" style="margin-top:0.5rem;">+ Add footnote</button>
         </details>
@@ -189,7 +189,7 @@ const editor = new Editor({
     element: editorEl,
     extensions: [
         StarterKit,
-        Placeholder.configure({ placeholder: 'Begin your paper… (use # for headings, * for lists)' }),
+        Placeholder.configure({ placeholder: 'Begin writing your paper here…' }),
     ],
     content: storedBody || '<p></p>',
     onUpdate() { scheduleAutosave(); updateWordCount(); },
